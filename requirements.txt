@@ -1,0 +1,10 @@
+# Python 3.10 environment
+# Install with: pip install -r requirements.txt
+
+cocoex>=2.6.100
+nevergrad>=1.0.8
+numpy~=1.24.3
+pandas>=1.5.0
+torch>=1.12.1
+scikit-learn>=1.1.2
+pflacco==1.2.2
