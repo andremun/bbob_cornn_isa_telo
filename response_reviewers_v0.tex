@@ -1,0 +1,282 @@
+% !TeX spellcheck = en_US
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[bottom]{footmisc}
+% \usepackage{natbib}
+\usepackage[natbibapa]{apacite} 
+\usepackage{tcolorbox}
+\usepackage[boxed,lined,linesnumbered]{algorithm2e}
+\usepackage[strings]{underscore}
+\usepackage[paper=a4paper, margin=1in]{geometry}
+\usepackage[font={bf,footnotesize}]{caption}
+\usepackage{times, amssymb, amsmath, textcomp, gensymb, epsfig, makeidx, graphicx, graphics, url, multirow, multicol, booktabs, array, bm, rotating, float, setspace, paralist, titlesec, subfig, wrapfig, color, enumitem, tabularx, everysel, titling, xr}
+\graphicspath{{figures/}}
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+\setlength{\rotFPtop}{0pt plus 1fil}
+% \setlength{\bibsep}{0.0pt}
+
+\makeatletter
+\newcommand*{\addFileDependency}[1]{% argument=file name and extension
+  \typeout{(#1)}
+  \@addtofilelist{#1}
+  \IfFileExists{#1}{}{\typeout{No file #1.}}
+}
+\makeatother
+
+\newcommand*{\myexternaldocument}[1]{%
+    \externaldocument{#1}%
+    \addFileDependency{#1.tex}%
+    \addFileDependency{#1.aux}%
+}
+
+\myexternaldocument{main}
+
+\setlength{\parindent}{0cm}
+\renewcommand{\labelitemi}{-}
+
+\EverySelectfont{%
+    \fontdimen2\font=0.4em% interword space
+    \fontdimen3\font=0.2em% interword stretch
+    \fontdimen4\font=0.1em% interword shrink
+    \fontdimen7\font=0.1em% extra space
+    \hyphenchar\font=`\-% to allow hyphenation
+}
+
+\titleformat*{\section}{\bfseries}
+\titlespacing*{\section}{0pt}{1.0\baselineskip}{1.0\baselineskip}
+\def\bibsection{\section*{\refname}}
+
+\newenvironment{blockpaperquote}{
+    \begin{center}
+        \begin{minipage}{0.9\textwidth}
+            \ttfamily\footnotesize}{
+        \end{minipage}
+    \end{center}
+}
+
+\newcommand{\inlinepaperquote}[1]{\texttt{\footnotesize #1}}
+
+\newcommand{\paperid}[1]{\gdef\pid{#1}}
+\newcommand{\pid}{}
+\newcommand{\journal}[1]{\gdef\jrn{#1}}
+\newcommand{\jrn}{}
+
+\def\maketitle{
+    {\flushleft
+    \begin{tabularx}{\dimexpr\textwidth}{lX}
+    Manuscript ID:	& \pid \\
+    Article Title:	& \thetitle \\
+    Authors:		& \theauthor \\
+    Journal:		& \jrn \\
+    \end{tabularx}}
+	\vspace{1em}
+}
+
+\newcommand{\ReviewerComment}[1]{\paragraph*{Comment \stepcounter{NumComment}\arabic{NumComment}:} \textit{#1}}
+\newcommand{\AuthorResponse}{\paragraph*{Response:}}
+
+\title{Modeling sustainability performance in manufacturing companies}
+\author{Anonymous}
+\paperid{CSR-25-0381}
+\journal{Corporate Social Responsibility and Environmental Management}
+
+% ===================================================================
+\begin{document}
+% ===================================================================
+	
+	% ===================================================================
+	% HEADING
+	% ===================================================================
+
+	\maketitle
+	
+    We want to thank the three reviewers for their feedback on our submission~\pid. In response, we have revised the manuscript to incorporate all necessary changes as recommended. We believe that the revised version of the paper has improved significantly in response to the feedback received. For the remainder of this document, we address each comment and detail the changes we have implemented. In the revised manuscript, the additions and changes are presented in blue text.
+    
+	\hrulefill
+	
+	% ===================================================================
+	\section*{Response to Reviewer 1}
+	% ===================================================================	
+    
+    \newcounter{NumComment}
+
+    \textit{The article “Modelling sustainability performance in manufacturing companies” addresses a critical gap in sustainability research by proposing a comprehensive SD model. The use of scenario analysis and the development of a CPI are innovative and valuable contributions. The inclusion of an interface proposal demonstrates a commitment to making the model accessible to non-experts.}
+
+    \ReviewerComment{Notably, article should be between 5000 and 8000 words in length. This includes all text, for example, abstract, references, all text in tables, figures, and appendices. Moreover, the maximum length of abstract should be 150 words in total. Although the limit is exceeded, it is recommended to reduce it but not to compromise comprehension.}
+
+    \AuthorResponse{We have reduced the length of our manuscript to 8,000 words, following the instructions for authors\footnote{\label{ft:authors}\url{https://onlinelibrary.wiley.com/page/journal/15353966/homepage/forauthors.html}}, which indicates that the length does not include references. Moreover, we have moved several tables to an anonymous repository\footnote{\label{ft:github}\url{https://anonymous.4open.science/r/SDSM-011D/}}. Appendices, as they are supplementary material, do not count towards the word count.}
+
+    \ReviewerComment{The aim is clear and results are concise, however several changes can enhance the quality of the article.}
+
+    \textit{The introduction effectively sets the stage for the study by highlighting the importance of sustainability in manufacturing companies. It needs a comprehensive framework to evaluate sustainability performance, which is a relevant and timely topic. Indeed, this section could have provided a clearer outline of the article's structure to guide readers through the content. While the problem statement is well-articulated, the introduction lacks specific examples or case studies to immediately ground the discussion in real-world applications.}
+
+    \AuthorResponse{We have revised the Introduction to highlight the relevance of Systems Dynamics modelling to business contexts. Moreover, we have included a paragraph at the end of the introduction describing the manuscript's structure.}
+
+    \ReviewerComment{The article introduces a well-structured model comprising three sub-models: emissions, production, and workers. This segmentation allows for a detailed analysis of different sustainability dimensions. The use of System Dynamics (SD) modeling is a strength, as it enables the study of complex interconnections between variables in a manufacturing system. However, the description of the sub-models, while detailed, may be too technical for readers unfamiliar with SD modeling. For instance, terms like ``Stock,'' ``Flow'' and ``auxiliary variables'' are not explained in layman's terms. The model's reliance on data from Colombian institutional reports limits its generalizability. While the authors claim the model can be adapted to other contexts, this adaptability is not demonstrated in the article.}
+
+    \AuthorResponse{We have expanded some key concept descriptions to enhance the clarity in Section 3. We also acknowledge the reviewer's concern about the model's adaptability. However, we consider that the demonstration using Colombian institutional data shows how the model parameters can be calibrated to a scenario without limiting the model's generalizability or structural realism.}
+
+    \ReviewerComment{The use of scenario analysis (Business as Usual, Optimistic, and Pessimistic) is not a robust approach to validate the model. It allows for the exploration of different future possibilities and their implications for sustainability performance. The validation methodology could have been strengthened by including real-world data or case studies to compare the model's predictions with actual outcomes. The results are heavily reliant on assumptions, such as the proportional usage of direct and indirect materials. These assumptions may not hold true across different industries or regions. The discussion of the results is somewhat limited, focusing more on the technical aspects of the model rather than the broader implications for sustainability practices.}
+
+    \AuthorResponse{We thank the reviewer for this comment. To expand the model's validation, we compare our model's output with data extracted from the sustainability reports for the Nutresa Group, a large multinational company headquartered in Colombia, between 2021 and 2024, after careful calibration. This comparison is presented in Section 5.1.
+
+    Acknowledging the limitations of obtaining and processing real-world data, we have made assumptions that we consider reasonable and grounded in experience. We can control the influence of these assumptions by calibrating the available parameters. Moreover, we discuss this limitation in Section 6.
+    
+    Our exploration of diverse scenarios aims to illustrate how the model can be used under varying conditions without compromising structural realism. Therefore, we do not intend to draw broad conclusions about sustainability practices; instead, we aim to provide a methodological framework, exemplified by a model, to help explore them. Accordingly, our focus is on the model's technical aspects. We believe that, for a tool, in this case our model, to be adopted, we need to provide trustworthy experiments demonstrating its flexibility, which we provide through the new real-world data experiment and the scenario analysis. Nevertheless, we acknowledge that perhaps the reviewer's comment may stem from a misunderstanding of our aims; hence, we have clarified them in the Introduction.}
+    
+    \ReviewerComment{The discussion highlights the flexibility of the SD model in analyzing diverse strategies and configurations, which is a significant advantage for companies looking to improve their sustainability performance. However, this section could have delved deeper into the practical implications of the findings. For example, how can companies use the model to make specific decisions about investments in sustainability? While the authors mention the challenges of integrating social aspects into sustainability models, they do not propose concrete solutions to address these challenges. The discussion is somewhat repetitive, reiterating points made earlier in the article without adding new insights.}
+
+    \AuthorResponse{We thank the reviewer for this comment and for acknowledging the flexibility of our model. We consider that our model provides insights into the effects of policies before implementation; therefore, management can propose various policies, such as those explored in our scenario analysis, and determine which one is likely to meet their sustainability objectives in the medium and long term. We have clarified this in both our Introduction and Discussion sections.
+
+    We acknowledge several challenges in integrating social aspects into sustainability models, particularly because many social effects are intangible. Our approach has been to incorporate these effects in terms of their impact on production, and hence on monetary aspects. While this may not be the optimal solution, it represents a reasonable trade-off that enables us to integrate the diverse indices. We leave a more thorough solution for further work.
+    
+    We have revised the manuscript to streamline the discussions, trying to remove repetition throughout the paper.}
+
+    % There are several ways to make specific decisions about sustainability. Mainly, we attach sustainability from three dimensions: economic, social, and environmental.
+    
+    % From an economic perspective, the model measures the impact of production, waste disposal, and manpower on gross profit and return on assets.
+
+    % From a social perspective, the model assesses the effects of hiring, layoffs (as a function of working rotation time), and salaries by gender in indices, including the proportion of collective agreements, occupational diseases, wage discrimination, and corruption (partially through breaches of the ethics code).
+
+    % Lastly, environmental aspects are sensitive to production, transportation, and waste disposal. Any decision that changes these aspects will have an impact on the environmental dimension.
+
+    % Thus, concrete solutions will depend on the context of the industry, as we are using simulated data that aims to represent an average firm, in a general way. The SD model proposes applying changes that are feasible in the real world, primarily based on enhancing a manufacturing feature, as modeled. 
+
+    % We review the discussion to remove several points that have already been mentioned in the document. }
+
+    \ReviewerComment{The interface proposal is not fully developed or tested in the article. For instance, there is no discussion of how users interacted with the interface or whether it improved their understanding of the model's results. The reliance on visual representations may not be sufficient for users who prefer detailed numerical data or written explanations.}
+
+    \AuthorResponse{We thank the reviewer for this comment. The proposed interface is intended as a tool for quick interaction with the model, and its validation would require a comprehensive user experience evaluation. Such evaluation falls outside the scope of our manuscript, but it is a valuable consideration for future work.
+
+    Despite this, we have made the interface available\footnote{\label{ft:interface}\url{https://exchange.iseesystems.com/public/hac/business-sustainability-model/index.html#page1}}. All data required by the model can be entered via a spreadsheet, and all results can be downloaded. Moreover, all data resulting from our simulations has also been made available in an anonymous repository\textsuperscript{\ref{ft:github}}.}
+
+    \ReviewerComment{The conclusion effectively summarizes the key findings and contributions of the study, emphasizing the importance of integrating environmental, social, and economic dimensions in sustainability models. However, it does not provide actionable recommendations for practitioners or policymakers, which would have enhanced the article's practical relevance. The potential for adapting the model to other contexts is mentioned but not elaborated upon, leaving readers with unanswered questions about its applicability.}
+
+    \AuthorResponse{We thank the reviewer for this comment. In our response to Comment 4, we emphasized that we aim to provide a methodological framework to help explore sustainability practices in a manufacturing company. Therefore, we do not intend to draw broad conclusions or actionable recommendations; instead, we present trustworthy experiments that demonstrate our model's flexibility. Moreover, we acknowledge that our simulation aims to reflect an average manufacturing company; as such, specific recommendations may be challenging to draw, particularly because the results will be affected by the individual company, represented by the input data and calibration. Despite this, we proposed that the model serves as a valuable tool for policy design, as it enables examination of impacts across scenarios driven by exogenous variables.
+
+    Nevertheless, we acknowledge that readers may have unanswered questions. Hence, we have analyzed our data to identify useful patterns for monitoring sustainable performance. For example, implementing GEI reduction initiatives could significantly enhance overall sustainability (by up to 14\% in our simulations). Additionally, production management strategies are effective in fostering improved sustainability practices (with improvements ranging from 1\% to 7\% in our simulations). These insights are described in Section 6.}
+
+    % Given that the simulation model reflects an average manufacturing company, providing specific recommendations for practitioners or policymakers is challenging. However, we suggest guidelines to help manufacturers monitor sustainable performance. 
+
+    % Some guidelines suggest that implementing GEI reduction initiatives has the potential to significantly enhance overall sustainability by 14\%. Additionally, production management strategies are effective in fostering improved sustainability practices, with enhancements ranging from 1\% to 7\%.
+
+    % In this context, any viable modifications to the input data within the SD model may yield various strategies that could affect sustainable performance. Consequently, the SD model serves as a valuable tool for policy design, as it enables examination of impacts across scenarios driven by exogenous variables.
+    
+
+    \ReviewerComment{Furthermore, references in the text should be prepared according to the Publication Manual of the American Psychological Association (6th edition), as follows: Single author: (Adams, 2006), Two authors: (Adams \& Brown, 2006), Three or more authors: (Adams et al.,2006). The Reference list should be rewrote according APA 6th Edition. The DOI should be included at the end of the reference in the correct form. For instance, it is absent in:}
+
+    \AuthorResponse{We thank the reviewer for their comment. This manuscript has been prepared using \LaTeX and Wiley's New Journal Design (NJD) authoring template\footnote{\label{ft:template}\url{https://authorservices.wiley.com/author-resources/Journal-Authors/Prepare/new-journal-design.html}}, which includes a citation style following APA 6th edition. We believe this template to be compliant with the journal's guidelines for authors\textsuperscript{\ref{ft:authors}}.}
+
+    \ReviewerComment{The below references are recent and provide valuable insights into sustainability, CSR, and environmental management, making them relevant additions to the article.}
+
+    \textit{
+    \begin{enumerate}
+        \item Bansal, P., \&; Song, H.-C. (2023). Sustainable Development and Corporate Social Responsibility: A Systematic Review and Future Research Agenda. Journal of Business Ethics, 184(2), 345-367.
+        \item Hall, J., \& Wagner, M. (2012). Integrating sustainability into firms' processes: Performance effects and the moderating role of business models and innovation. Business Strategy and the Environment, 21(3), 183-196.
+        \item Esposito, P., Doronzo, E., Riso, V., \& Tufo, M. (2025). Sustainability in Energy Companies Under the Lens of Cultural Pressures: When Do We Talk of Greenwashing?. Corporate Social Responsibility and Environmental Management. 32: 3814-3831.
+        \item Zhou, X., Zhang, Y., \& Li, J. (2023). Circular Economy Practices in Emerging Markets: A Pathway to Sustainable Development. Journal of Cleaner Production, 398, 136789.
+    \end{enumerate}}
+
+    \AuthorResponse{We thank the reviewer for their suggestions. We have thoroughly searched for the cited references and incorporated elements from Esposito et al. (2025) and Hall \& Wagner (2012) into the Introduction. However, we were unable to find both Bansal \& Song (2023) and Zhou et al. (2023). For example, Bansal \& Song's (2023) bibliographic information overlaps with:
+    \vspace{1em}
+
+    M. Richards ``When do Non-financial Goals Benefit Stakeholders? Theorizing on Care and Power in Family Firms'' Journal of Business Ethics, 184(2)333-351 \url{https://doi.org/10.1007/s10551-022-05046-9}
+    \vspace{1em}
+
+    Meanwhile, the paper 136789 from the \textit{Journal of Cleaner Production} was not published in issue 398, but in issue 403, and corresponds to:
+    \vspace{1em}
+
+    Li Wang, Fan Zhang, Xiaonan Shi, Chen Zeng, Ijaz Ahmad, Guanxing Wang, Sahadeep Thapa, Xing Xu ``Water resources system vulnerability in high mountain areas under climate change'' (2023) Journal of Cleaner Production,  403, 136789, \url{https://doi.org/10.1016/j.jclepro.2023.136789}.
+    \vspace{1em}
+
+    Therefore, we have decided not to include these references.}
+
+    \hrulefill
+    
+	% ===================================================================
+	\section*{Response to Reviewer 2}
+	% ===================================================================
+    \setcounter{NumComment}{0}
+
+    %     \ReviewerComment{I believe the paper is not properly framed for an audience in the field of business. It focuses a lot on the model and its calibration (that I do not debate) without correctly writing the message in a scientific "vessel" to be received by a general reader. I am not sure exactly what the purpose is from a research perspective, whether it has hypotheses, it aligns itself with a literature and discuss another. Secondly, there is eccessive focus on the environmental aspect of the issue. CSR refers also to this issue but not entirely. Furthermore, the simple adoption of a model and adjustments of calibration are not enough per se. In short, I do not see the value added of the paper, even though it might have one. Is it a problem the readability? why is it so? how can this change the issue? is it really relevant for example for ESG scores?}
+    
+    %     \textit{The authors might consider to seriously rewrite the introduction, literature and the discussion as to position the paper correctly.}
+
+    \ReviewerComment{I believe the paper is not properly framed for an audience in the field of business. It focuses a lot on the model and its calibration (that I do not debate) without correctly writing the message in a scientific ``vessel'' to be received by a general reader.}
+    
+    \AuthorResponse{We thank the reviewer for their comment. We acknowledge that the framing in the first version of our manuscript may have been unclear to a business audience. Drawing on our responses to Reviewer 1, Comments 4 and 7, with our manuscript, we aim to provide a methodological framework, exemplified by a model, to help explore and plan sustainability practices in manufacturing companies by projecting a set of indices representing performance across the Economic, Social, and Environmental axes of sustainability into the future. Therefore, we do not intend to draw broad conclusions about them, nor provide immediately actionable recommendations. Accordingly, our focus is on the model's technical aspects, such as calibration and validation. Moreover, we demonstrate the model's flexibility and structural realism through rigorous experiments, showing that it can replicate real-world data and, through parametrization, explore scenarios that yield relevant insights into performance. To highlight this focus, we have extensively redrafted the Introduction, clarifying our aims and relating them to relevant literature. We hope this addresses the reviewer's valid concerns.}
+    
+    \ReviewerComment{I am not sure exactly what the purpose is from a research perspective, whether it has hypotheses, it aligns itself with a literature and discuss another.}
+    
+    \AuthorResponse{We thank the reviewer for their comment. We acknowledge that the manuscript does not pose a specific research question or hypothesis, for example, ``What would be the effect of achieving gender parity on the economic axis of sustainability for a typical manufacturing company?'' Nevertheless, we recognise the immense value of tackling such questions. Therefore, as a first step, we need a comprehensive, robust model to explore them. We emphasize that our manuscript is a methodological proposal that introduces a comprehensive model and demonstrates its reliability. It considers multiple aspects of CSR and opens avenues for addressing several research questions. Moreover, we consider our model capable of addressing diverse hypotheses in manufacturing contexts, as demonstrated by our comprehensive scenario analysis. To highlight this perspective, we have made it more explicit in the Introduction and Discussion sections of our manuscript.}
+    
+    \ReviewerComment{Secondly, there is eccessive focus on the environmental aspect of the issue. CSR refers also to this issue but not entirely.}
+    
+    \AuthorResponse{We thank the reviewer and acknowledge that the model may appear tilted toward the environmental aspect due to the inclusion of an emissions model, and its prominent description. However, the model examines social and economic factors, including occupational diseases, wage discrimination, and return on assets, as shown in Table 1 and in the Workers sub-model. Moreover, our three main KPIs can be reweighted to emphasize a particular outcome. Therefore, we consider that the model does include a balanced view of CSR.}
+    
+    \ReviewerComment{Furthermore, the simple adoption of a model and adjustments of calibration are not enough per se}
+    
+    \AuthorResponse{We thank the reviewer for their question. We acknowledge that a common research approach is to pose a research question or hypothesis, then follow a methodology that provides an answer to the question or leads to acceptance or rejection of the hypothesis. However, we emphasize that our manuscript is a methodological proposal that introduces a comprehensive model and demonstrates its reliability. We disagree that this approach lacks value, as it is the first step toward addressing such critical questions. Nevertheless, to avoid confusion, we have not only clarified the aim of our manuscript but also included a new section detailing the model calibration using data extracted from the sustainability reports for the Nutresa Group, a large multinational company headquartered in Colombia, between 2021 and 2024. Moreover, we have analyzed our data to identify useful patterns for monitoring sustainable performance. For example, implementing GEI reduction initiatives could significantly enhance overall sustainability (by up to 14\% in our simulations). Additionally, production management strategies are effective in fostering improved sustainability practices (with improvements ranging from 1\% to 7\% in our simulations). These insights are described in Section 5.8, and the limitations of our observations are acknowledged in the Discussion section.}
+    
+    \ReviewerComment{I do not see the value added of the paper, even though it might have one. Is it a problem the readability? why is it so? how can this change the issue? is it really relevant for example for ESG scores?}
+    
+    \AuthorResponse{We thank the reviewer for their valuable comment. ESG scores are not standardized formulas, but constructed by specialized organisations, such as MSCI or S\&P Global, to inform financial markets. On the other hand, our objective is to provide indices that can examine environmental, social, and economic aspects from a risk perspective. The relative importance of each depends on the specific characteristics of the sector. In our work, we focus on the manufacturing sector; accordingly, we emphasize the most relevant indicators for this sector. Moreover, we believe that our approach is relevant, as a simulation model enables us to project sustainability indices into the future and assess the impacts of different policies on them. As such, we believe the model facilitates obtaining insights into how our actions would affect our sustainability targets, which is more cost-effective than implementing broad-based changes that can be time- and resource-intensive. Nevertheless, we acknowledge that we may not have clearly stated these aims in our manuscript. As such, we have revised the Introduction to link simulation to planning and explicitly target sustainability indices.}
+
+    \ReviewerComment{minor corrections: Sometimes the citations are incorrect. Check for example line 37 page 8.}
+    
+    \AuthorResponse{We have revised each citation to ensure that it is complete and correct.}
+    
+	\hrulefill
+	
+	% ===================================================================
+	\section*{Response to Reviewer 3}
+	% ===================================================================
+    
+    \setcounter{NumComment}{0}
+    
+    \ReviewerComment{Strengths:}
+    
+    \textit{Relevance and Originality: The topic is timely and important. Your work contributes meaningfully by integrating environmental, social, and economic dimensions into a unified simulation model—something that is often lacking in sustainability performance assessment.}
+    
+    \textit{Methodological Rigor: The development and validation of the SD model are clearly articulated, and the use of sub-models (emissions, production, workers) adds valuable granularity.}
+    
+    \textit{Practical Implications: The proposed dashboard and scenario analysis make the model not only theoretically robust but also practically useful for decision-makers.}
+
+    \AuthorResponse We thank the reviewer for their positive comments on our manuscript. We hope we have addressed their concerns on this new version.
+
+    \ReviewerComment{Areas for Improvement:}
+    
+    \textit{Generalizability of the Model: While the model is well-constructed, its reliance on data from the Colombian manufacturing context may limit its transferability. Consider discussing how the model might be adapted or recalibrated for use in other industrial or geographic settings.}
+
+    \AuthorResponse{We thank the reviewer for their comment. We agree that one of the main limitations of modeling processes is the availability and quality of data. Since many businesses are cautious about sharing data, we consulted several available sources to estimate an average behavior. Moreover, to avoid reliance solely on data from the Colombian manufacturing sector, we add a new subsection that includes a validation method to increase the model's reliability by approximating input model data for the Nutresa Group, a multinational firm with operations in several countries. The model validation also demonstrates flexibility with respect to production units. In this context, ``units'' refers to various units of measurement used in manufacturing, such as boxes or liters. For NG, it refers to the amount of money in US dollars that represents the value of production. Finally, we have included a discussion on the limitations of our data and observations in the Discussion.}
+    
+    \ReviewerComment{Complexity and Usability: With 199 variables and 100 equations, the model’s complexity could pose challenges for non-expert users. You might reflect further on how to simplify or modularize the model for broader adoption, or propose support mechanisms (e.g., user guides, training modules).}
+
+    \AuthorResponse{We thank the reviewer for their comment. We acknowledge that the model is highly complex; however, we modularized it to enable per-module execution, primarily due to data limitations. In addition, several submodels are primarily indicative, revealing the structure of the KPIs and the factors that constitute the environmental, social, and economic KPIs. We discuss how the model complexity could pose challenges in the Discussion section.}
+    
+    \ReviewerComment{Treatment of Social KPIs: The monetary-based formulation of some social indicators (e.g., ethics violations, occupational diseases) is innovative but may raise interpretive challenges. Clarifying the rationale for these choices—and their limitations—would improve transparency.}
+
+    \AuthorResponse{We thank the reviewer for their comment. We proposed several social indicators based on a monetary approach due to data limitations regarding social aspects, such as ethical behavior. Nevertheless, we consider that every social aspect addressed in the model affects business performance, and the most direct way to measure this is through monetary metrics; as such, several social KPIs are expressed as functions of the total cost of managing workers. We have discussed the limitations of this approach in our Discussion section.}
+    
+    \ReviewerComment{Innovation and Marketing KPIs: These were excluded due to data limitations, but their absence is notable. If possible, briefly discuss how these dimensions might be integrated in future iterations of the model.}
+
+    \AuthorResponse{We thank the reviewer for their comment. We agree that Innovation and Marketing KPIs could be integrated when data about the impact on sales and production is available. These sectors were proposed in previous system dynamics models and could be adapted to a specific manufacturing context, as innovation and marketing impacts differ significantly across manufacturing activities. We include further details in our Discussion section.}
+    
+    \ReviewerComment{Clarity on Benchmarking: The use of sector averages (e.g., for emissions) is helpful, but their construction could be explained more clearly. How would managers determine appropriate benchmarks in different contexts?}
+
+    \AuthorResponse{We thank the reviewer for their comment. Benchmarking measures a business's performance by comparing it against a desired behaviour, typically a sector's average. For example, if the objective is to reduce CO\textsubscript{2} emissions, a goal could be to emit less than the sector's average. If this objective is already being achieved, the goal can be tightened to its best possible value, for example, to be the lowest emitter in a sector. Strategies for defining appropriate benchmarks may vary across businesses and objectives; hence, a one-size-fits-all approach is challenging. We discuss these concepts further in our Discussion section.}
+    
+    \ReviewerComment{Minor language and formatting issues: A thorough proofreading round is recommended to correct a few minor grammatical issues and improve clarity in some technical passages (especially in sections 3 and 4).}
+
+    \AuthorResponse{We conducted a thorough revision of the paper, correcting grammatical issues and improving clarity.}
+
+	% \hrulefill
+
+    % =======================================================================
+    % \bibliographystyle{apacite}
+    % \bibliography{cas-refs}
+    % =======================================================================
+
+% ===================================================================
+\end{document}
+% ===================================================================
