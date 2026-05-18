@@ -33,7 +33,6 @@ cornn_telo/
 │   ├── run_collect_raw_data.sh      # Stage 1: raw landscape data (1404 tasks)
 │   ├── run_collect_pflacco.sh       # Stage 2: ELA features (684 tasks)
 │   ├── run_all_performance.sh       # All performance data (7020 tasks)
-├── migrate_data.sh                  # One-off: migrate data from old layout
 ├── suite_largescale.c               # Modified COCO source (dims 41, 261, 481)
 ├── requirements.txt                 # Python 3.10 environment
 └── README.md
@@ -137,17 +136,6 @@ sbatch slurm/run_all_performance.sh
 ```matlab
 shared_consolidate_raw_data        % computes AUC, processes ELA
 shared_generate_instance_space     % ISA pipeline, figures, tables
-```
-
----
-
-## Data migration
-
-If you have data from the previous `TELO_DATA` layout, migrate it with:
-
-```bash
-bash migrate_data.sh --dry-run   # preview
-bash migrate_data.sh             # execute
 ```
 
 ---
