@@ -23,8 +23,8 @@
 % Full license text: https://polyformproject.org/licenses/noncommercial/1.0.0
 
 %% SET THE ENVIRONMENT AND GET THE DATA READY
-addpath('.\tSNE_matlab\');
-addpath('.\MATILDA\');
+% addpath('.\tSNE_matlab\');
+% addpath('.\MATILDA\');
 scriptfcn;
 
 cfg     = cornn_config();
@@ -82,7 +82,7 @@ Lambda = tsne_d(D,[],2,10);
 
 rng('default');
 eva = evalclusters(Lambda, 'kmeans', 'gap', ...
-                           'KList', 3:size(X,2), ... % minimum of three features
+                           'KList', 3:number_components, ... % minimum of three features
                            'Distance', 'sqeuclidean', ...
                            'SearchMethod','firstMaxSE');
 clust = bsxfun(@eq, eva.OptimalY, 1:eva.OptimalK);
@@ -181,28 +181,31 @@ group_by_function = categorical(group_by_function);
 group_by_function = renamecats(group_by_function,{'25','26'},{'ReLU','Tanh'});
 
 for ii=1:length(strong)
-    p = anovan(X(:,strong(ii)),group_by_dimension(:));
-    disp(p);
+    p = anovan(X(:,strong(ii)),group_by_dimension(:),'display','off');
 end
 
 % SOURCES GRAPH
+ubound = ceil(max(Z));
+lbound = floor(min(Z));
+
 figure;
 gscatter(Z(:,1),Z(:,2),group_by_dimension,'bbbkkkkkkrrrrrr',...
                                           '.sx..ssxx..ssxx',...
                                           [8 8 8 4 12 4 12 4 12 4 12 4 12 4 12]);
 legend(group_names, 'Location','northeastoutside');
 xlabel('z_{1}'); ylabel('z_{2}');
-axis square; grid
+axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]); grid
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
-print(gcf, '-dpng', 'bbob_cornn_by_dimension.png');
+print(gcf, '-dpng', fullfile(isa_dir, 'bbob_cornn_by_dimension.png'));
 
 figure;
-gscatter(Z(:,1),Z(:,2),group_by_function,[],'.+^v');
+clrs = [jet(24); 0 0 0; 0.5 0.5 0.5];
+gscatter(Z(:,1),Z(:,2),group_by_function,clrs,'.+^v');
 legend(categories(group_by_function), 'Location','northeastoutside');
 xlabel('z_{1}'); ylabel('z_{2}');
-axis square; grid
+axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]); grid
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
-print(gcf, '-dpng', 'bbob_cornn_by_function.png');
+print(gcf, '-dpng', fullfile(isa_dir, 'bbob_cornn_by_function.png'));
 
 
 % FEATURE GRAPHS
@@ -216,9 +219,10 @@ for ii=1:length(strong)
     title(replace(feature_names(strong(ii)),"_"," "));
     xlabel('z_{1}'); ylabel('z_{2}');
     set(findall(gcf,'-property','FontSize'),'FontSize',12);
-    print(gcf,'-dpng',['tsne_' feature_names{strong(ii)} '.png']);
+    axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+    print(gcf,'-dpng', fullfile(isa_dir, ['tsne_' feature_names{strong(ii)} '.png']));
 
-    figure(h2)
+    figure(h2);
     subplot(1,4,ii);
     daviolinplot(ela(:,strong(ii)),'groups',cc,'boxcolors','k','outliers',0,...
                                  'box',0,'boxwidth',0.8,'scatter',2,...
@@ -227,31 +231,33 @@ for ii=1:length(strong)
     ylabel(replace(feature_names(strong(ii)),"_"," "));
     set(findall(gcf,'-property','FontSize'),'FontSize',12);
 end
-print(gcf,'-dpng','violin_strong_features.png');
+print(gcf,'-dpng', fullfile(isa_dir, 'violin_strong_features.png'));
 
 % FOOTPRINT GRAPHS
 for ii=1:number_algorithms
     figure;
     drawScatter(Z, meta_data{:,performance_idx(ii)}, algorithm_names{ii});
-    print(gcf,'-dpng',['distribution_performance_' algorithm_names{ii} '.png']);
+    grid on;
+    print(gcf,'-dpng', fullfile(isa_dir, ['distribution_performance_' algorithm_names{ii} '.png']));
 
     figure;
     drawGoodBadFootprint(Z, trace_outputs{1}.good{ii}, Ybin(:,ii), algorithm_names{ii});
     legend("Location","northeast");
-    print(gcf,'-dpng',['footprint_' algorithm_names{ii} '_eps' num2str(epsilon) '.png']);
+    grid;
+    print(gcf,'-dpng', fullfile(isa_dir, ['footprint_' algorithm_names{ii} '_eps' num2str(epsilon) '.png']));
 end
 
 figure;
 drawPortfolioSelections(Z, p_selection, algorithm_names, 'Best algorithm');
-print(gcf,'-dpng', 'distribution_svm_portfolio.png');
+print(gcf,'-dpng', fullfile(isa_dir, 'distribution_svm_portfolio.png'));
 
 figure;
 drawPortfolioSelections(Z, o_selection, algorithm_names, 'Predicted best algorithm');
-print(gcf,'-dpng', 'distribution_svm_portfolio.png');
+print(gcf,'-dpng', fullfile(isa_dir, 'distribution_svm_portfolio.png'));
 
 figure;
 drawPortfolioFootprint(Z, trace_outputs{1}.best, p_selection, algorithm_names);
-print(gcf,'-dpng','footprint_portfolio.png');
+print(gcf,'-dpng',fullfile(isa_dir, 'footprint_portfolio.png'));
 
 % SUMMARY TABLES
 summary = vertcat(trace_outputs{1}.summary,trace_outputs{2}.summary);
@@ -288,21 +294,9 @@ daviolinplot(train_test_dist(:),'groups',idx(:),...
                                 'box',0,'boxwidth',0.8,'scatter',2,...
                                 'scattersize',15,'jitter',1,'scattercolors','same');
 ylabel('Distance between train and test');
-xticklabels(replace(group_names(4:2:end),", Train",""))
+xticklabels(replace(group_names(4:2:end),", Train",""));
 legend off; grid on;
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(gca,"Position",[0.1300 0.1100 0.7750 0.6200]);
-print(gcf, '-dpng', 'train_test_distance_by_groups.png');
+print(gcf, '-dpng', fullfile(isa_dir, 'train_test_distance_by_groups.png'));
 
-% gg = [isbo041|isnet1, isbo261|isnet3, isbo481|isnet5];
-% aux = zeros(number_instances,1);
-% for ii=1:3
-%     aux(gg(:,ii)) = zscore(X(gg(:,ii),strong(2)));
-% end
-% figure;
-% scatter(Z(:,1),Z(:,2),8,aux,'filled');
-% colorbar('EastOutside'); axis square; grid on;
-% title(replace(feature_names(strong(2)),"_"," "));
-% xlabel('z_{1}'); ylabel('z_{2}');
-% set(findall(gcf,'-property','FontSize'),'FontSize',12);
-% print(gcf,'-dpng',['tsne_' feature_names{strong(2)} '.png']);
