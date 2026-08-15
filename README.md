@@ -32,8 +32,7 @@ cornn_telo/
 ├── slurm/
 │   ├── run_collect_raw_data.sh      # Stage 1: raw landscape data (1404 tasks)
 │   ├── run_collect_pflacco.sh       # Stage 2: ELA features (684 tasks)
-│   ├── run_all_performance.sh       # All performance data (7020 tasks)
-├── migrate_data.sh                  # One-off: migrate data from old layout
+│   └── run_all_performance.sh       # All performance data (7020 tasks)
 ├── suite_largescale.c               # Modified COCO source (dims 41, 261, 481)
 ├── requirements.txt                 # Python 3.10 environment
 └── README.md
@@ -195,17 +194,6 @@ instructions for adapting the pipeline to a different benchmark or machine.
 
 ---
 
-## Data migration
-
-If you have data from the previous `TELO_DATA` layout, migrate it with:
-
-```bash
-bash migrate_data.sh --dry-run   # preview
-bash migrate_data.sh             # execute
-```
-
----
-
 ## Algorithm portfolio
 
 | Algorithm | Type | Notes |
@@ -231,6 +219,23 @@ bash migrate_data.sh             # execute
 | BBOB Adam | `{problem_id}_Adam_R{run}.csv` |
 | CORNN nevergrad | `F_{fcn}_{arch}_{algo}_R{run}.csv` |
 | CORNN Adam | `F_{fcn}_{arch}_Adam_R{run}.csv` |
+
+---
+
+## Citation
+
+If you use this code or data in your research, please cite:
+
+```bibtex
+@article{Malan2026cornn,
+  title   = {An Instance Space Analysis of Neural Network Training as a
+             Black-Box Optimisation Problem},
+  author  = {Malan, Katherine Mary and Mu{\~n}oz, Mario Andr{\'e}s},
+  journal = {ACM Transactions on Evolutionary Learning and Optimization},
+  year    = {2026},
+  note    = {Accepted}
+}
+```
 
 ---
 
