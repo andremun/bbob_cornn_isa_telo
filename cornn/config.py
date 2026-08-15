@@ -151,6 +151,26 @@ ADAM_EPS        = 1e-8      # denominator stabiliser
 FD_EPS          = 1e-3      # finite-difference step size
 
 # =============================================================================
+# SAMPLE MODE  (local reproducibility and badge verification)
+# =============================================================================
+# Set SAMPLE_MODE=1 to restrict data collection to a small subset that runs
+# the full pipeline locally in a few minutes without a cluster.
+#
+# Sample subset:
+#   BBOB:  functions 1 and 8, instances 1-3, dimension 41 only, 1 replicate
+#   CORNN: first function x first architecture only, dimension 41, 1 replicate
+#
+# Usage:
+#   SAMPLE_MODE=1 python bbob_collect_raw_data.py
+
+SAMPLE_MODE = os.environ.get("SAMPLE_MODE", "0") == "1"
+
+SAMPLE_BBOB_FUNCTIONS  = [1, 8]
+SAMPLE_BBOB_INSTANCES  = [1, 2, 3]
+SAMPLE_DIMENSIONS      = [41]
+SAMPLE_REPLICATES      = [1]
+
+# =============================================================================
 # TASK ID  (SLURM array or local fallback)
 # =============================================================================
 

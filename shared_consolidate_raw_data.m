@@ -183,7 +183,7 @@ area_under_the_curve_bbob = cell(number_instances_bbob,number_algorithms+1);
 inc = 1;
 ii = 1;
 while ii<number_files
-    index_run = strfind(filelist{ii},'_Adam');
+    index_run = strfind(filelist{ii},'_CMA');
     fcn = filelist{ii}(1:index_run(end)-1);
     area_under_the_curve_bbob{inc,1} = fcn;
     index_files = find(contains(filelist,fcn));
@@ -243,7 +243,7 @@ expected_fevals_cornn = nan(number_targets,number_algorithms,number_instances_co
 inc = 1;
 ii = 1;
 while ii<number_files
-    index_run = strfind(filelist{ii},'_Adam_train');
+    index_run = strfind(filelist{ii},'_CMA_train');
     if isempty(index_run), ii = ii+1; continue; end
     fcn = filelist{ii}(1:index_run(end)-1);
     algo_suffixes = {'Adam','CMA','PSO','RandomSearch','TwoPointsDE'};
@@ -348,7 +348,7 @@ legend(algorithm_names,"Location","northeast");
 xlabel('log_{10}(F_{evals})'); ylabel('Probability reaching target');
 axis([-1 6 0 1]); axis square; grid;
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
-print(gcf, '-dpng', fullfile(isa_dir, 'ecdf_per_algorithm.png'));
+print(gcf, '-dpng', 'ecdf_per_algorithm.png');
 
 
 %% PROCESS THE PFLACCO DATA

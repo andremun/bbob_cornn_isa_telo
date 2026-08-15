@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+*.so
+.env
+.venv
+venv/
+
+# MATLAB
+*.asv
+*.m~
+slprj/
+
+# Data (never commit raw data to git)
+bbob_cornn_isa/
+*.csv
+*.dat
+*.mat
+
+# OS
+.DS_Store
+Thumbs.db

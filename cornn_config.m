@@ -64,6 +64,24 @@ for ii = 1:length(dirs)
 end
 
 % =============================================================================
+% SAMPLE MODE  (local reproducibility and badge verification)
+% =============================================================================
+% Set environment variable SAMPLE_MODE=1 to restrict to a small subset.
+% Usage in MATLAB:  setenv('SAMPLE_MODE','1'); cfg = cornn_config();
+%
+% Sample subset:
+%   BBOB:  functions 1 and 8, instances 1-3, dimension 41, 1 replicate
+%   CORNN: first function x first architecture, dimension 41, 1 replicate
+
+cfg.sample_mode = strcmp(getenv('SAMPLE_MODE'), '1');
+if cfg.sample_mode
+    cfg.dimensions         = 41;
+    cfg.n_bbob_functions   = 2;     % functions 1 and 8 only
+    cfg.n_bbob_instances   = 3;     % instances 1-3 only
+    cfg.n_replicates       = 1;
+end
+
+% =============================================================================
 % EXPERIMENT CONSTANTS  (paper-authoritative values)
 % =============================================================================
 
