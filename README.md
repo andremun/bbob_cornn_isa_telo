@@ -75,13 +75,11 @@ Build COCO v2.6.100 from source with the modified `suite_largescale.c`
 
 ```bash
 git clone https://github.com/numbbo/coco.git
-cp suite_largescale.c coco/build/suite_largescale.c
 cd coco
+# Replace build/suite_largescale.c with the version in this repository
 python do.py run-python
 pip install code-experiments/build/python
 ```
-
-`suite_largescale.c` is provided in the root of this repository.
 
 ### MATLAB toolboxes
 
@@ -89,13 +87,11 @@ The following MATILDA toolbox scripts are bundled directly in this repository:
 `TRACE.m`, `scriptfcn.m`, `KNNRegressor.m`. No separate MATILDA installation
 is needed.
 
-The `tsne` call in `shared_generate_instance_space.m` uses MATLAB's built-in
-t-SNE (Statistics and Machine Learning Toolbox, R2017b or later). The
-`tsne_d` call for feature clustering uses the same toolbox via a
-distance-matrix input (`tsne(D, 'Distance', 'precomputed')`). No external
-t-SNE toolbox is required.
-
-Required MATLAB toolboxes: Statistics and Machine Learning Toolbox.
+The t-SNE implementation used in `shared_generate_instance_space.m` is loaded
+via `addpath('.\tSNE_matlab\')`. Download the Barnes-Hut t-SNE toolbox by
+van der Maaten from https://lvdmaaten.github.io/tsne/ and place it in a
+`tSNE_matlab/` subdirectory alongside the scripts, or replace the `tsne_d`
+call with MATLAB's built-in `tsne` if the Statistics Toolbox is available.
 
 ### Python environment
 
@@ -106,32 +102,6 @@ Python 3.10.
 ```bash
 pip install -r requirements.txt
 ```
-
----
-
-## Sample mode (local verification)
-
-To run the full pipeline locally without a cluster — for example, to verify
-each step produces the expected output — use sample mode:
-
-```bash
-export SAMPLE_MODE=1
-```
-
-In sample mode the scripts restrict to 2 BBOB functions (f1, f8) × 3 instances
-× dimension 41 × 1 replicate, and 1 CORNN function × 1 architecture. The full
-pipeline completes in approximately 10 minutes on a standard laptop.
-
-For MATLAB post-processing in sample mode:
-```matlab
-setenv('SAMPLE_MODE', '1');
-shared_consolidate_raw_data
-shared_generate_instance_space
-```
-
-Intermediate data (Sobol grids, ELA features, AUC tables) for dimension 41
-are available on Figshare (see the paper for the DOI), allowing Steps 1–4
-to be skipped entirely for post-processing verification.
 
 ---
 
@@ -168,30 +138,6 @@ shared_consolidate_raw_data        % computes AUC, processes ELA
 shared_generate_instance_space     % ISA pipeline, figures, tables
 ```
 
-Individual sections of `shared_generate_instance_space.m` can be run
-independently using the section flags at the top of the script (e.g. set
-`RUN_FOOTPRINTS = false` to skip footprint estimation).
-
----
-
-## Verification: expected outputs
-
-| Step | Expected output | Quick check (full mode) | Quick check (sample mode) |
-|---|---|---|---|
-| 1 — Sobol grids | CSV files in `input/` | `ls input/ \| wc -l` → 15 | → 3 |
-| 2 — BBOB raw | CSV files in `bbob/raw/` | `ls bbob/raw/ \| wc -l` → 5400 | → 6 |
-| 3 — ELA features | CSV files in `bbob/ela/` | `ls bbob/ela/ \| wc -l` → 360 | → 2 |
-| 4 — Performance | CSV files across `bbob/` and `cornn/` | `ls bbob/nevergrad/ \| wc -l` → 129600 | → 180 |
-| 5 — MATLAB | Files in `isa/` | `BBOB_CORNN_metadata.csv` exists | same |
-
----
-
-## Configuration
-
-See [CONFIGURATION.md](CONFIGURATION.md) for a full description of all
-tuneable parameters, data paths, algorithm portfolio options, and
-instructions for adapting the pipeline to a different benchmark or machine.
-
 ---
 
 ## Algorithm portfolio
@@ -219,23 +165,6 @@ instructions for adapting the pipeline to a different benchmark or machine.
 | BBOB Adam | `{problem_id}_Adam_R{run}.csv` |
 | CORNN nevergrad | `F_{fcn}_{arch}_{algo}_R{run}.csv` |
 | CORNN Adam | `F_{fcn}_{arch}_Adam_R{run}.csv` |
-
----
-
-## Citation
-
-If you use this code or data in your research, please cite:
-
-```bibtex
-@article{Malan2026cornn,
-  title   = {An Instance Space Analysis of Neural Network Training as a
-             Black-Box Optimisation Problem},
-  author  = {Malan, Katherine Mary and Mu{\~n}oz, Mario Andr{\'e}s},
-  journal = {ACM Transactions on Evolutionary Learning and Optimization},
-  year    = {2026},
-  note    = {Accepted}
-}
-```
 
 ---
 
