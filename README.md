@@ -32,7 +32,7 @@ cornn_telo/
 ├── slurm/
 │   ├── run_collect_raw_data.sh      # Stage 1: raw landscape data (1404 tasks)
 │   ├── run_collect_pflacco.sh       # Stage 2: ELA features (684 tasks)
-│   └── run_all_performance.sh       # All performance data (7020 tasks)
+│   ├── run_all_performance.sh       # All performance data (7020 tasks)
 ├── suite_largescale.c               # Modified COCO source (dims 41, 261, 481)
 ├── requirements.txt                 # Python 3.10 environment
 └── README.md
@@ -234,6 +234,15 @@ If you use this code or data in your research, please cite:
   journal = {ACM Transactions on Evolutionary Learning and Optimization},
   year    = {2026},
   note    = {Accepted}
+}
+
+@misc{MunozData2026,
+  author    = {Mu{\~n}oz, Mario Andr{\'e}s},
+  title     = {{ISA} of Neural Network Training as a {BBO} Problem},
+  year      = {2026},
+  publisher = {FigShare},
+  doi       = {10.26188/32609130},
+  url       = {https://doi.org/10.26188/32609130}
 }
 ```
 
