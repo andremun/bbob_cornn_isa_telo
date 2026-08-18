@@ -1,6 +1,6 @@
 # Configuration Guide
 
-All tuneable parameters and path definitions live in two files that mirror
+All tunable parameters and path definitions live in two files that mirror
 each other:
 
 - **`cornn/config.py`** — read by all Python scripts

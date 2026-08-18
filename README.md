@@ -17,6 +17,7 @@ cornn_telo/
 ├── bbob_run_nevergrad.py            # BBOB nevergrad optimiser runs
 ├── bbob_run_adam.py                 # BBOB finite-difference Adam runs
 ├── bbob_run_pflacco.py              # BBOB ELA feature computation
+├── CONFIGURATION.md                 # Configuration guide
 ├── cornn_collect_raw_data.py        # Evaluate CORNN loss landscapes on Sobol grids
 ├── cornn_run_nevergrad.py           # CORNN nevergrad optimiser runs
 ├── cornn_run_adam.py                # CORNN finite-difference Adam runs
@@ -32,7 +33,7 @@ cornn_telo/
 ├── slurm/
 │   ├── run_collect_raw_data.sh      # Stage 1: raw landscape data (1404 tasks)
 │   ├── run_collect_pflacco.sh       # Stage 2: ELA features (684 tasks)
-│   ├── run_all_performance.sh       # All performance data (7020 tasks)
+│   └── run_all_performance.sh       # All performance data (7020 tasks)
 ├── suite_largescale.c               # Modified COCO source (dims 41, 261, 481)
 ├── requirements.txt                 # Python 3.10 environment
 └── README.md
