@@ -6,6 +6,9 @@ Writes one Y-file per (fcn, nn_architecture, sid) triple.
 
 SLURM: one task per (fcn, arch) pair (54 fns x 6 archs = 324 tasks).
        Task index is read via cornn.config.get_task_id().
+
+SAMPLE_MODE: restricts to the first function x first architecture, then
+ignores task dispatch and processes it in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -27,13 +30,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cornn.config import (
     INPUT_DIR, CORNN_RAW_DIR,
     N_REPLICATES, SAMPLE_SIZE,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
 
 function_dictionary        = CORNN.get_benchmark_functions()
 neural_network_dictionary  = CORNN.get_NN_models()
+
+if SAMPLE_MODE:
+    first_fcn  = next(iter(function_dictionary))
+    first_arch = next(iter(neural_network_dictionary))
+    function_dictionary       = {first_fcn: function_dictionary[first_fcn]}
+    neural_network_dictionary = {first_arch: neural_network_dictionary[first_arch]}
+    print(f"[INFO] SAMPLE_MODE active: restricted to function={first_fcn!r}, "
+          f"architecture={first_arch!r}")
+
 task_id                    = get_task_id()
 current_index              = 0
 
@@ -42,7 +54,7 @@ for fcn in function_dictionary:
 
     for nn_architecture in neural_network_dictionary:
         current_index += 1
-        if current_index != task_id:
+        if not SAMPLE_MODE and current_index != task_id:
             continue
 
         nn_arch  = neural_network_dictionary[nn_architecture]()
@@ -55,6 +67,7 @@ for fcn in function_dictionary:
         for sid in range(1, N_REPLICATES + 1):
             y_path = CORNN_RAW_DIR / f"F_{fcn_tag}_{arch_tag}_S{SAMPLE_SIZE}_R{sid}.csv"
             if y_path.is_file():
+                print(f"[SKIP] {y_path} already exists")
                 continue
 
             x_path = INPUT_DIR / f"X_D{dim}_S{SAMPLE_SIZE}_R{sid}.csv"
@@ -86,9 +99,11 @@ for fcn in function_dictionary:
             pd.DataFrame({"training_loss": tr_loss, "testing_loss": te_loss}).to_csv(
                 y_path, index=False
             )
-            print(f"[OK] {y_path}")
+            print(f"[OK] Wrote {y_path}")
 
-        break  # one (fcn, arch) pair per task
+        if not SAMPLE_MODE:
+            break  # one (fcn, arch) pair per task
     else:
         continue
-    break
+    if not SAMPLE_MODE:
+        break

@@ -5,6 +5,10 @@ Run nevergrad optimisers on the CORNN benchmark suite.
 
 SLURM: one task per (algorithm, fcn, arch) triple
        (4 algs x 54 fns x 6 archs = 1296 tasks).
+
+SAMPLE_MODE: restricts to the first function x first architecture, then
+ignores task dispatch and processes every algorithm against that single
+(fcn, arch) pair in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -27,13 +31,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cornn.config import (
     CORNN_NG_DIR, ALGORITHM_NAMES,
     BUDGET, N_RUNS, BOUNDS_LO, BOUNDS_HI,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
 
 function_dictionary        = CORNN.get_benchmark_functions()
 neural_network_dictionary  = CORNN.get_NN_models()
+
+if SAMPLE_MODE:
+    first_fcn  = next(iter(function_dictionary))
+    first_arch = next(iter(neural_network_dictionary))
+    function_dictionary       = {first_fcn: function_dictionary[first_fcn]}
+    neural_network_dictionary = {first_arch: neural_network_dictionary[first_arch]}
+    print(f"[INFO] SAMPLE_MODE active: restricted to function={first_fcn!r}, "
+          f"architecture={first_arch!r}; processing all algorithms")
+
 task_id                    = get_task_id()
 current_index              = 0
 
@@ -43,7 +56,7 @@ for name in ALGORITHM_NAMES:
 
         for nn_architecture in neural_network_dictionary:
             current_index += 1
-            if current_index != task_id:
+            if not SAMPLE_MODE and current_index != task_id:
                 continue
 
             nn_arch  = neural_network_dictionary[nn_architecture]()
@@ -54,6 +67,7 @@ for name in ALGORITHM_NAMES:
             for run in range(N_RUNS):
                 out_path = CORNN_NG_DIR / f"F_{fcn_tag}_{arch_tag}_{name}_R{run}.csv"
                 if out_path.is_file():
+                    print(f"[SKIP] {out_path} already exists")
                     continue
 
                 y_hist_train, y_hist_test = [], []
@@ -77,12 +91,14 @@ for name in ALGORITHM_NAMES:
                     "training_loss": y_hist_train,
                     "testing_loss":  y_hist_test,
                 }).to_csv(out_path, index=False)
-                print(out_path)
+                print(f"[OK] Wrote {out_path}")
 
-            break  # one (name, fcn, arch) per task
+            if not SAMPLE_MODE:
+                break  # one (name, fcn, arch) per task
         else:
             continue
         break
     else:
         continue
-    break
+    if not SAMPLE_MODE:
+        break

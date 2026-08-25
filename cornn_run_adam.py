@@ -7,6 +7,9 @@ SLURM: one task per (fcn, arch) pair (54 fns x 6 archs = 324 tasks).
 Forward differences: d+1 evals per gradient step on training loss.
 Test loss recorded once per gradient step; not counted against budget.
 Remaining budget after last full step is exhausted at the final point.
+
+SAMPLE_MODE: restricts to the first function x first architecture, then
+ignores task dispatch and processes it in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -30,7 +33,7 @@ from cornn.config import (
     CORNN_ADAM_DIR,
     BUDGET, N_RUNS, BOUNDS_LO, BOUNDS_HI,
     ADAM_LR, ADAM_BETA1, ADAM_BETA2, ADAM_EPS, FD_EPS,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
@@ -109,6 +112,15 @@ class FiniteDifferenceAdam:
 
 function_dictionary        = CORNN.get_benchmark_functions()
 neural_network_dictionary  = CORNN.get_NN_models()
+
+if SAMPLE_MODE:
+    first_fcn  = next(iter(function_dictionary))
+    first_arch = next(iter(neural_network_dictionary))
+    function_dictionary       = {first_fcn: function_dictionary[first_fcn]}
+    neural_network_dictionary = {first_arch: neural_network_dictionary[first_arch]}
+    print(f"[INFO] SAMPLE_MODE active: restricted to function={first_fcn!r}, "
+          f"architecture={first_arch!r}")
+
 task_id                    = get_task_id()
 current_index              = 0
 
@@ -117,7 +129,7 @@ for fcn in function_dictionary:
 
     for nn_architecture in neural_network_dictionary:
         current_index += 1
-        if current_index != task_id:
+        if not SAMPLE_MODE and current_index != task_id:
             continue
 
         nn_arch   = neural_network_dictionary[nn_architecture]()
@@ -133,6 +145,7 @@ for fcn in function_dictionary:
         for run in range(N_RUNS):
             out_path = CORNN_ADAM_DIR / f"F_{fcn_tag}_{arch_tag}_Adam_R{run}.csv"
             if out_path.is_file():
+                print(f"[SKIP] {out_path} already exists")
                 continue
 
             rng = np.random.default_rng(run)
@@ -142,9 +155,11 @@ for fcn in function_dictionary:
                 "training_loss": tr_hist,
                 "testing_loss":  te_hist,
             }).to_csv(out_path, index=False)
-            print(out_path)
+            print(f"[OK] Wrote {out_path}")
 
-        break
+        if not SAMPLE_MODE:
+            break
     else:
         continue
-    break
+    if not SAMPLE_MODE:
+        break

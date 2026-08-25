@@ -96,10 +96,17 @@ ISA_DIR        = Path(os.environ.get("BBOB_CORNN_ISA_DIR",      str(ISA_DIR)))
 
 
 def make_dirs() -> None:
-    """Create all output directories. Call once at the start of any script."""
+    """Create all output directories. Call once at the start of any script.
+
+    Prints a message for each directory actually created, so a run's log
+    always shows where output will land -- silence here would otherwise
+    hide a misconfigured BBOB_CORNN_ROOT until the first write fails.
+    """
     for d in [INPUT_DIR, BBOB_RAW_DIR, BBOB_ELA_DIR, BBOB_NG_DIR, BBOB_ADAM_DIR,
               CORNN_RAW_DIR, CORNN_ELA_DIR, CORNN_NG_DIR, CORNN_ADAM_DIR, ISA_DIR]:
-        d.mkdir(parents=True, exist_ok=True)
+        if not d.is_dir():
+            d.mkdir(parents=True, exist_ok=True)
+            print(f"[INFO] Created directory: {d}")
 
 
 # =============================================================================
@@ -154,14 +161,20 @@ FD_EPS          = 1e-3      # finite-difference step size
 # SAMPLE MODE  (local reproducibility and badge verification)
 # =============================================================================
 # Set SAMPLE_MODE=1 to restrict data collection to a small subset that runs
-# the full pipeline locally in a few minutes without a cluster.
+# the full pipeline locally in a few minutes without a cluster. When active,
+# a script that would normally process one (algorithm, function, ...)
+# combination per invocation (selected via TASK_ID / SLURM_ARRAY_TASK_ID)
+# instead ignores task dispatch and processes every combination in the
+# sample subset in a single run.
 #
 # Sample subset:
 #   BBOB:  functions 1 and 8, instances 1-3, dimension 41 only, 1 replicate
 #   CORNN: first function x first architecture only, dimension 41, 1 replicate
+#   All scripts: N_RUNS reduced to SAMPLE_RUNS, BUDGET reduced to SAMPLE_BUDGET
 #
 # Usage:
-#   SAMPLE_MODE=1 python bbob_collect_raw_data.py
+#   export SAMPLE_MODE=1
+#   python bbob_collect_raw_data.py   # processes both sample functions
 
 SAMPLE_MODE = os.environ.get("SAMPLE_MODE", "0") == "1"
 
@@ -169,6 +182,33 @@ SAMPLE_BBOB_FUNCTIONS  = [1, 8]
 SAMPLE_BBOB_INSTANCES  = [1, 2, 3]
 SAMPLE_DIMENSIONS      = [41]
 SAMPLE_REPLICATES      = [1]
+SAMPLE_RUNS            = 3
+SAMPLE_BUDGET          = 500
+
+if SAMPLE_MODE:
+    DIMENSIONS       = SAMPLE_DIMENSIONS
+    N_REPLICATES     = len(SAMPLE_REPLICATES)
+    N_BBOB_FUNCTIONS = len(SAMPLE_BBOB_FUNCTIONS)
+    N_BBOB_INSTANCES = len(SAMPLE_BBOB_INSTANCES)
+    BBOB_INSTANCES   = "instances:" + ",".join(map(str, SAMPLE_BBOB_INSTANCES))
+    BBOB_SETTINGS    = (
+        "function_indices:" + ",".join(map(str, SAMPLE_BBOB_FUNCTIONS))
+        + " dimensions:" + ",".join(map(str, SAMPLE_DIMENSIONS))
+    )
+    N_RUNS = SAMPLE_RUNS
+    BUDGET = SAMPLE_BUDGET
+
+# Canonical BBOB function/instance ID lists. Scripts that enumerate BBOB
+# functions or instances manually (rather than through a cocoex.Suite
+# object) should iterate over these, not over range(1, N_BBOB_FUNCTIONS+1),
+# since the sample subset {1, 8} is not a contiguous range and a
+# range()-based loop would silently process the wrong functions.
+if SAMPLE_MODE:
+    BBOB_FUNCTION_IDS = list(SAMPLE_BBOB_FUNCTIONS)
+    BBOB_INSTANCE_IDS = list(SAMPLE_BBOB_INSTANCES)
+else:
+    BBOB_FUNCTION_IDS = list(range(1, N_BBOB_FUNCTIONS + 1))
+    BBOB_INSTANCE_IDS = list(range(1, N_BBOB_INSTANCES + 1))
 
 # =============================================================================
 # TASK ID  (SLURM array or local fallback)

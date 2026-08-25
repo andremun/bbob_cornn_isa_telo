@@ -5,6 +5,9 @@ Compute ELA/pflacco features for all CORNN instances.
 
 SLURM: one task per (fcn, arch) pair (54 fns x 6 archs = 324 tasks).
        sid (5 replicates) is an inner loop within each task.
+
+SAMPLE_MODE: restricts to the first function x first architecture, then
+ignores task dispatch and processes it in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -38,20 +41,29 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cornn.config import (
     INPUT_DIR, CORNN_RAW_DIR, CORNN_ELA_DIR,
     N_REPLICATES, SAMPLE_SIZE,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
 
 function_dictionary        = CORNN.get_benchmark_functions()
 neural_network_dictionary  = CORNN.get_NN_models()
+
+if SAMPLE_MODE:
+    first_fcn  = next(iter(function_dictionary))
+    first_arch = next(iter(neural_network_dictionary))
+    function_dictionary       = {first_fcn: function_dictionary[first_fcn]}
+    neural_network_dictionary = {first_arch: neural_network_dictionary[first_arch]}
+    print(f"[INFO] SAMPLE_MODE active: restricted to function={first_fcn!r}, "
+          f"architecture={first_arch!r}")
+
 task_id                    = get_task_id()
 current_index              = 0
 
 for fcn in function_dictionary:
     for nn_architecture in neural_network_dictionary:
         current_index += 1
-        if current_index != task_id:
+        if not SAMPLE_MODE and current_index != task_id:
             continue
 
         # Derive dimension from the architecture without instantiating
@@ -119,9 +131,11 @@ for fcn in function_dictionary:
                 f"ELA_F_{fcn_tag}_{arch_tag}_S{SAMPLE_SIZE}_R{sid}.csv"
             )
             pd.DataFrame(records).to_csv(out_path, index=False)
-            print(f"[OK] {out_path}")
+            print(f"[OK] Wrote {out_path}")
 
-        break
+        if not SAMPLE_MODE:
+            break
     else:
         continue
-    break
+    if not SAMPLE_MODE:
+        break

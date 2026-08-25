@@ -6,6 +6,9 @@ Run finite-difference Adam on the BBOB large-scale suite.
 SLURM: one task per problem (24 fns x 15 inst x 3 dims = 1080 tasks).
 Forward differences: d+1 evals per gradient step.
 Remaining budget after last full step is exhausted at the final point.
+
+SAMPLE_MODE: ignores task dispatch and processes every problem in the small
+sample suite in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -30,7 +33,7 @@ from cornn.config import (
     BBOB_ADAM_DIR,
     BUDGET, N_RUNS, BOUNDS_LO, BOUNDS_HI,
     ADAM_LR, ADAM_BETA1, ADAM_BETA2, ADAM_EPS, FD_EPS,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
@@ -101,9 +104,13 @@ suite         = cocoex.Suite(BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS)
 task_id       = get_task_id()
 current_index = 0
 
+if SAMPLE_MODE:
+    print(f"[INFO] SAMPLE_MODE active: processing all problems in this "
+          f"invocation, ignoring TASK_ID={task_id}")
+
 for problem in suite:
     current_index += 1
-    if current_index != task_id:
+    if not SAMPLE_MODE and current_index != task_id:
         continue
 
     optimizer = FiniteDifferenceAdam(dim=problem.dimension, budget=BUDGET)
@@ -111,12 +118,14 @@ for problem in suite:
     for run in range(N_RUNS):
         out_path = BBOB_ADAM_DIR / f"{problem.id}_Adam_R{run}.csv"
         if out_path.is_file():
+            print(f"[SKIP] {out_path} already exists")
             continue
 
         rng = np.random.default_rng(run)
         x0  = rng.uniform(BOUNDS_LO, BOUNDS_HI, size=problem.dimension)
         hist = optimizer.minimize(problem, x0)
         pd.DataFrame(hist, columns=["Fval"]).to_csv(out_path, index=False)
-        print(out_path)
+        print(f"[OK] Wrote {out_path}")
 
-    break  # one problem per task
+    if not SAMPLE_MODE:
+        break  # one problem per task

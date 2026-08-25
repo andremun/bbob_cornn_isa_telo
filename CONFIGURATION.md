@@ -1,6 +1,6 @@
 # Configuration Guide
 
-All tunable parameters and path definitions live in two files that mirror
+All tuneable parameters and path definitions live in two files that mirror
 each other:
 
 - **`cornn/config.py`** — read by all Python scripts
@@ -171,6 +171,22 @@ rows.
 
 ---
 
+## Task dispatch
+
+Every runner script processes one (algorithm, function, ...) combination
+per invocation by default, selected by `cornn.config.get_task_id()`:
+
+```python
+def get_task_id() -> int:
+    # Reads TASK_ID first, then SLURM_ARRAY_TASK_ID, then defaults to 1.
+```
+
+`TASK_ID` is set by the SLURM dispatch scripts in `slurm/` (see
+`README.md`); `SLURM_ARRAY_TASK_ID` is set automatically by a standalone
+SLURM array submission. Running a script directly with neither variable
+set (a plain local `python bbob_run_nevergrad.py`) processes task 1 only
+-- the first combination in that script's enumeration order.
+
 ## Sample mode
 
 Restricts all data collection to a small subset for local verification
@@ -183,12 +199,45 @@ without a cluster.
 | `SAMPLE_BBOB_INSTANCES` | `[1, 2, 3]` | First 3 instances only |
 | `SAMPLE_DIMENSIONS` | `[41]` | Lowest dimension only |
 | `SAMPLE_REPLICATES` | `[1]` | Single Sobol replicate |
+| `SAMPLE_RUNS` | `3` | Optimiser runs per instance (vs 30 normally) |
+| `SAMPLE_BUDGET` | `500` | Function evaluations per run (vs 5000 normally) |
+
+**Mechanism.** In every runner script, `SAMPLE_MODE` does two things:
+1. `cornn/config.py` restricts `DIMENSIONS`, `BBOB_SETTINGS`, `BBOB_INSTANCES`,
+   `N_REPLICATES`, `N_RUNS`, and `BUDGET` to the sample values above -- this
+   happens automatically for every script that imports them, with no
+   per-script changes needed.
+2. Each runner script normally processes exactly one (algorithm, function, ...)
+   combination per invocation, selected by `TASK_ID` / `SLURM_ARRAY_TASK_ID`
+   (see "Task dispatch" above). When `SAMPLE_MODE=1`, this dispatch is
+   bypassed entirely and the script processes **every** combination in the
+   (small) sample subset within a single invocation, so one bare command
+   produces complete output.
+
+For CORNN scripts, the sample subset is further restricted to the first
+function and first architecture returned by `CORNN.get_benchmark_functions()`
+/ `CORNN.get_NN_models()`, with all algorithms still exercised (to verify
+the full portfolio).
 
 ```bash
 export SAMPLE_MODE=1
-python bbob_collect_raw_data.py   # ~2 min
-python bbob_run_pflacco.py        # ~3 min
+python bbob_collect_raw_data.py    # both sample functions, ~1 min
+python bbob_run_pflacco.py         # both sample functions, ~1 min
+python bbob_run_nevergrad.py       # all 4 algorithms x 2 functions, 3 runs each, ~2 min
+python bbob_run_adam.py            # 2 functions, 3 runs each, ~1 min
+python cornn_collect_raw_data.py   # first function x first architecture, ~1 min
+python cornn_run_pflacco.py        # first function x first architecture, ~1 min
+python cornn_run_nevergrad.py      # all 4 algorithms, 3 runs each, ~2 min
+python cornn_run_adam.py           # 3 runs, ~1 min
 ```
+
+**Caveat.** `bbob_run_pflacco.py` iterates over the explicit
+`BBOB_FUNCTION_IDS` / `BBOB_INSTANCE_IDS` lists from `cornn/config.py`
+rather than `range(1, N+1)`, because the sample function subset `{1, 8}`
+is not a contiguous range. Any future script that enumerates BBOB
+functions or instances manually (not via a `cocoex.Suite` object) should
+do the same, or it will silently process the wrong functions in sample
+mode.
 
 ---
 
@@ -235,21 +284,33 @@ shared_generate_instance_space.m
 ## Post-processing sections
 
 `shared_generate_instance_space.m` is divided into independently
-executable sections controlled by flags at the top of the script:
+executable sections controlled by `cfg.run.*` flags, set in
+`cornn_config.m` and each overridable via an environment variable of the
+same name:
 
-| Flag | Controls | Output files |
-|---|---|---|
-| `RUN_LOAD_DATA` | Join ELA features with AUC data | `BBOB_CORNN_metadata.csv` |
-| `RUN_PROJECTION` | PCA + t-SNE 2D embedding | (in-memory `Z`) |
-| `RUN_FEATURES` | Feature clustering and correlation | (printed to console) |
-| `RUN_MODELS` | KNN prediction models | (in-memory `Yhat`, `Ycv`) |
-| `RUN_FOOTPRINTS` | TRACE footprint estimation | (in-memory `trace_outputs`) |
-| `RUN_FIGURES` | All scatter, violin, and footprint plots | `*.png` |
-| `RUN_TABLES` | `finds_targets`, `rho_features_axes` | (MATLAB workspace) |
+| Flag | Env var override | Controls | Output files |
+|---|---|---|---|
+| `cfg.run.load_data`  | `RUN_LOAD_DATA`  | Join ELA features with AUC data | `BBOB_CORNN_metadata.csv` |
+| `cfg.run.projection` | `RUN_PROJECTION` | PCA + t-SNE 2D embedding | (in-memory `Z`) |
+| `cfg.run.features`   | `RUN_FEATURES`   | Feature clustering and correlation | (printed to console) |
+| `cfg.run.models`     | `RUN_MODELS`     | KNN prediction models | (in-memory `Yhat`, `Ycv`) |
+| `cfg.run.footprints` | `RUN_FOOTPRINTS` | TRACE footprint estimation | (in-memory `trace_outputs`) |
+| `cfg.run.figures`    | `RUN_FIGURES`    | All scatter, violin, and footprint plots | `*.png` in `isa/` |
+| `cfg.run.tables`     | `RUN_TABLES`     | `finds_targets`, `rho_features_axes`, `footprint_summary`, `train_test_distance` | `*.csv` in `isa/` |
 
-Note: `RUN_MODELS` and `RUN_FOOTPRINTS` depend on `RUN_PROJECTION` having
-been run in the same session. `RUN_FIGURES` and `RUN_TABLES` depend on all
-preceding sections.
+The flags live in configuration (not hardcoded in the script) so they can
+be set from the command line without editing any file, e.g.:
+
+```matlab
+setenv('RUN_FIGURES', '0');   % skip figure generation this run
+shared_generate_instance_space
+```
+
+Note: `cfg.run.models` and `cfg.run.footprints` depend on
+`cfg.run.projection` having been run in the same MATLAB session (they
+reuse `Z` from the workspace). `cfg.run.figures` and `cfg.run.tables`
+depend on all preceding sections. Every section prints an `[OK]`/`[SKIP]`
+line so it is always clear from the console log which sections ran.
 
 ---
 

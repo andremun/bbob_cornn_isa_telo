@@ -5,6 +5,9 @@ Run nevergrad optimisers on the BBOB large-scale suite.
 
 SLURM: one task per (algorithm, problem) pair
        (4 algs x 24 fns x 15 inst x 3 dims = 4320 tasks).
+
+SAMPLE_MODE: ignores task dispatch and processes every (algorithm, problem)
+combination in the small sample suite in a single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -28,7 +31,7 @@ from cornn.config import (
     BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS,
     BBOB_NG_DIR, ALGORITHM_NAMES,
     BUDGET, N_RUNS, BOUNDS_LO, BOUNDS_HI,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
@@ -37,15 +40,20 @@ suite         = cocoex.Suite(BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS)
 task_id       = get_task_id()
 current_index = 0
 
+if SAMPLE_MODE:
+    print(f"[INFO] SAMPLE_MODE active: processing all combinations in this "
+          f"invocation, ignoring TASK_ID={task_id}")
+
 for name in ALGORITHM_NAMES:
     for problem in suite:
         current_index += 1
-        if current_index != task_id:
+        if not SAMPLE_MODE and current_index != task_id:
             continue
 
         for run in range(N_RUNS):
             out_path = BBOB_NG_DIR / f"{problem.id}_{name}_R{run}.csv"
             if out_path.is_file():
+                print(f"[SKIP] {out_path} already exists")
                 continue
 
             y_hist = []
@@ -64,6 +72,7 @@ for name in ALGORITHM_NAMES:
             )
             optim.minimize(myproblem)
             pd.DataFrame(y_hist, columns=["Fval"]).to_csv(out_path, index=False)
-            print(out_path)
+            print(f"[OK] Wrote {out_path}")
 
-        break  # one (name, problem) pair per task
+        if not SAMPLE_MODE:
+            break  # one (name, problem) pair per task

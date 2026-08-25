@@ -6,6 +6,10 @@ and write one Y-file per (fid, iid, sid) triple.
 
 SLURM: one task per problem (24 fns x 15 inst x 3 dims = 1080 tasks).
        Task index is read via cornn.config.get_task_id().
+
+SAMPLE_MODE: ignores task dispatch and processes every problem in the small
+sample suite (BBOB_SETTINGS is already restricted by cornn.config) in a
+single invocation.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -28,7 +32,7 @@ from cornn.config import (
     BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS,
     INPUT_DIR, BBOB_RAW_DIR,
     N_REPLICATES, SAMPLE_SIZE,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
@@ -37,9 +41,13 @@ suite         = cocoex.Suite(BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS)
 task_id       = get_task_id()
 current_index = 0
 
+if SAMPLE_MODE:
+    print(f"[INFO] SAMPLE_MODE active: processing all problems in this "
+          f"invocation, ignoring TASK_ID={task_id}")
+
 for problem in suite:
     current_index += 1
-    if current_index != task_id:
+    if not SAMPLE_MODE and current_index != task_id:
         continue
 
     dim = problem.dimension
@@ -49,6 +57,7 @@ for problem in suite:
     for sid in range(1, N_REPLICATES + 1):
         y_path = BBOB_RAW_DIR / f"F{fid}_D{dim}_I{iid}_S{SAMPLE_SIZE}_R{sid}.csv"
         if y_path.is_file():
+            print(f"[SKIP] {y_path} already exists")
             continue
 
         x_path = INPUT_DIR / f"X_D{dim}_S{SAMPLE_SIZE}_R{sid}.csv"
@@ -73,6 +82,7 @@ for problem in suite:
                 y_vals.append(float("nan"))
 
         pd.DataFrame(y_vals, columns=["Y"]).to_csv(y_path, index=False)
-        print(f"[OK] {y_path}")
+        print(f"[OK] Wrote {y_path}")
 
-    break  # one problem per task
+    if not SAMPLE_MODE:
+        break  # one problem per task

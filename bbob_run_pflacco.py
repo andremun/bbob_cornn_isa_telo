@@ -5,6 +5,12 @@ Compute ELA/pflacco features for all BBOB large-scale instances.
 
 SLURM: one task per (dim, sid, fid) triple (3 x 5 x 24 = 360 tasks).
        iid (15 instances) is an inner loop within each task.
+
+SAMPLE_MODE: ignores task dispatch and processes every (dim, sid, fid)
+combination in the small sample suite in a single invocation. Iterates
+over the explicit BBOB_FUNCTION_IDS / BBOB_INSTANCE_IDS lists rather than
+range(1, N+1), since the sample function subset {1, 8} is not a
+contiguous range.
 """
 
 # Copyright (c) 2026 Mario Andres Munoz Acosta
@@ -35,10 +41,10 @@ from pflacco.misc_features import calculate_fitness_distance_correlation
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cornn.config import (
-    DIMENSIONS, N_BBOB_FUNCTIONS, N_BBOB_INSTANCES,
+    DIMENSIONS, BBOB_FUNCTION_IDS, BBOB_INSTANCE_IDS,
     INPUT_DIR, BBOB_RAW_DIR, BBOB_ELA_DIR,
     N_REPLICATES, SAMPLE_SIZE,
-    get_task_id, make_dirs,
+    SAMPLE_MODE, get_task_id, make_dirs,
 )
 
 make_dirs()
@@ -46,11 +52,16 @@ make_dirs()
 task_id       = get_task_id()
 current_index = 0
 
+if SAMPLE_MODE:
+    print(f"[INFO] SAMPLE_MODE active: processing all combinations in this "
+          f"invocation, ignoring TASK_ID={task_id}")
+    print(f"[INFO] Function IDs: {BBOB_FUNCTION_IDS} | Instance IDs: {BBOB_INSTANCE_IDS}")
+
 for dim in DIMENSIONS:
     for sid in range(1, N_REPLICATES + 1):
-        for fid in range(1, N_BBOB_FUNCTIONS + 1):
+        for fid in BBOB_FUNCTION_IDS:
             current_index += 1
-            if current_index != task_id:
+            if not SAMPLE_MODE and current_index != task_id:
                 continue
 
             x_path = INPUT_DIR / f"X_D{dim}_S{SAMPLE_SIZE}_R{sid}.csv"
@@ -66,7 +77,7 @@ for dim in DIMENSIONS:
                 continue
 
             records = []
-            for iid in range(1, N_BBOB_INSTANCES + 1):
+            for iid in BBOB_INSTANCE_IDS:
                 y_path = BBOB_RAW_DIR / f"F{fid}_D{dim}_I{iid}_S{SAMPLE_SIZE}_R{sid}.csv"
                 if not y_path.is_file():
                     print(f"[WARN] Missing Y: {y_path}. Skipping.")
@@ -100,4 +111,9 @@ for dim in DIMENSIONS:
 
             out_path = BBOB_ELA_DIR / f"ELA_F{fid}_D{dim}_S{SAMPLE_SIZE}_R{sid}.csv"
             pd.DataFrame(records).to_csv(out_path, index=False)
-            print(f"[OK] {out_path}")
+            print(f"[OK] Wrote {out_path} ({len(records)} instance records)")
+
+            if not SAMPLE_MODE:
+                # Task dispatch selects exactly one (dim, sid, fid) triple;
+                # nothing further to do in this invocation.
+                sys.exit(0)
