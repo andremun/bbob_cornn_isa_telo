@@ -30,8 +30,10 @@
 %   Full license text: https://polyformproject.org/licenses/noncommercial/1.0.0
 
 %% SET THE ENVIRONMENT
-addpath('.\tSNE_matlab\');
-addpath('.\MATILDA\');
+% TRACE, scriptfcn, KNNRegressor, tblvertcat, and daviolinplot are bundled
+% at the repository root -- no addpath needed. The tsne(...) calls below
+% use MATLAB's built-in Statistics and Machine Learning Toolbox function;
+% no external t-SNE toolbox is required.
 scriptfcn;
 
 cfg     = cornn_config();

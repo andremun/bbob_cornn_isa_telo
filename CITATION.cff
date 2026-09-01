@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the paper below (see
+  preferred-citation). If you use the accompanying data, please also cite
+  the Figshare data release listed under references.
+title: "BBOB-CORNN Instance Space Analysis"
+type: software
+authors:
+  - family-names: "Muñoz"
+    given-names: "Mario Andrés"
+    affiliation: "University of Melbourne"
+repository-code: "https://github.com/andremun/bbob_cornn_isa_telo"
+license: PolyForm-Noncommercial-1.0.0
+abstract: >-
+  Code for the instance space analysis (ISA) comparing the CORNN neural
+  network training benchmark suite with the BBOB large-scale noiseless
+  benchmark suite across dimensions 41, 261, and 481.
+preferred-citation:
+  type: article
+  title: "An Instance Space Analysis of Neural Network Training as a Black-Box Optimisation Problem"
+  authors:
+    - family-names: "Malan"
+      given-names: "Katherine Mary"
+    - family-names: "Muñoz"
+      given-names: "Mario Andrés"
+      affiliation: "University of Melbourne"
+  journal: "ACM Transactions on Evolutionary Learning and Optimization"
+  year: 2026
+  notes: "Accepted; volume, issue, and DOI to be added upon publication."
+references:
+  - type: data
+    title: "ISA of Neural Network Training as a BBO Problem"
+    authors:
+      - family-names: "Muñoz"
+        given-names: "Mario Andrés"
+        affiliation: "University of Melbourne"
+    year: 2026
+    publisher:
+      name: "FigShare"
+    doi: "10.26188/32609130"
+    url: "https://doi.org/10.26188/32609130"

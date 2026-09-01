@@ -30,11 +30,20 @@ TOTAL_TASKS=7020
 ARRAY_SIZE=1000
 TASKS_PER_JOB=$(( (TOTAL_TASKS + ARRAY_SIZE - 1) / ARRAY_SIZE ))
 
+# Cluster modules are specific to SPARTAN (The University of Melbourne HPC).
+# On a different cluster, replace this block with your own module loads,
+# or comment it out entirely if using a pre-built environment/container.
 module purge
 module load foss/2022a tqdm/4.64.0 scikit-learn/1.1.2 PyTorch/1.12.1-CUDA-11.7.0
 
-source ~/venvs/CORNN/bin/activate
-cd ~/venvs/CORNN/CORNN/
+# Python venv and repository location. Both default to the authors' own setup
+# but can be overridden without editing this script, e.g.:
+#   sbatch --export=CORNN_VENV_DIR=/my/venv,CORNN_REPO_DIR=/my/repo run_*.sh
+CORNN_VENV_DIR="${CORNN_VENV_DIR:-$HOME/venvs/CORNN}"
+CORNN_REPO_DIR="${CORNN_REPO_DIR:-$HOME/venvs/CORNN/CORNN}"
+
+source "${CORNN_VENV_DIR}/bin/activate"
+cd "${CORNN_REPO_DIR}"
 
 for k in $(seq 1 $TASKS_PER_JOB); do
     FLAT_TASK=$(( (SLURM_ARRAY_TASK_ID - 1) * TASKS_PER_JOB + k ))

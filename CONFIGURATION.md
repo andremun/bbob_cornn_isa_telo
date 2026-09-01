@@ -93,6 +93,13 @@ compute time. The value `100 × D` follows best practice from Renau et al.
 | `N_BBOB_INSTANCES` | `15` | Instances 1–15 per function |
 | `BBOB_SUITE` | `"bbob-largescale"` | COCO suite name |
 
+`BBOB_FUNCTION_IDS` / `BBOB_INSTANCE_IDS` (Python) and
+`cfg.bbob_function_ids` / `cfg.bbob_instance_ids` (MATLAB) are the
+canonical, sample-mode-aware ID lists. Any script that enumerates BBOB
+functions or instances manually should iterate over these rather than
+`range(1, N+1)` / `1:N`, since the sample subset `{1, 8}` is not a
+contiguous range.
+
 To restrict to a subset of BBOB functions, modify `BBOB_SETTINGS`:
 ```python
 # cornn/config.py — e.g. separable functions only (f1-f5)
@@ -266,7 +273,9 @@ cornn_run_nevergrad.py  cornn_run_adam.py
 shared_consolidate_raw_data.m
   reads ◄── bbob/{nevergrad,adam}/   cornn/{nevergrad,adam}/
   reads ◄── bbob/ela/                cornn/ela/
-  reads ◄── bbob/meta/bbob_fopt.csv
+  reads ◄── bbob/meta/bbob_fopt.csv   [external data artifact, see README Step 0;
+                                       provenance chain: bbob_collect_meta.py ->
+                                       bbob_collect_fopt.m]
   writes ──► isa/BBOB_area_under_the_curve.csv
   writes ──► isa/CORNN_area_under_the_curve.csv
   writes ──► isa/BBOB_CORNN_pflacco.csv

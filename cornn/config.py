@@ -74,6 +74,7 @@ BBOB_RAW_DIR    = ROOT_DATA_DIR / "bbob"  / "raw"   # landscape evaluations
 BBOB_ELA_DIR    = ROOT_DATA_DIR / "bbob"  / "ela"   # pflacco features
 BBOB_NG_DIR     = ROOT_DATA_DIR / "bbob"  / "nevergrad"
 BBOB_ADAM_DIR   = ROOT_DATA_DIR / "bbob"  / "adam"
+BBOB_META_DIR   = ROOT_DATA_DIR / "bbob"  / "meta"  # bbob_fopt.csv and .dat observer logs
 
 CORNN_RAW_DIR   = ROOT_DATA_DIR / "cornn" / "raw"
 CORNN_ELA_DIR   = ROOT_DATA_DIR / "cornn" / "ela"
@@ -88,6 +89,7 @@ BBOB_RAW_DIR   = Path(os.environ.get("BBOB_RAW_DIR",            str(BBOB_RAW_DIR
 BBOB_ELA_DIR   = Path(os.environ.get("BBOB_ELA_DIR",            str(BBOB_ELA_DIR)))
 BBOB_NG_DIR    = Path(os.environ.get("BBOB_NG_DIR",             str(BBOB_NG_DIR)))
 BBOB_ADAM_DIR  = Path(os.environ.get("BBOB_ADAM_DIR",           str(BBOB_ADAM_DIR)))
+BBOB_META_DIR  = Path(os.environ.get("BBOB_META_DIR",            str(BBOB_META_DIR)))
 CORNN_RAW_DIR  = Path(os.environ.get("CORNN_RAW_DIR",           str(CORNN_RAW_DIR)))
 CORNN_ELA_DIR  = Path(os.environ.get("CORNN_ELA_DIR",           str(CORNN_ELA_DIR)))
 CORNN_NG_DIR   = Path(os.environ.get("CORNN_NG_DIR",            str(CORNN_NG_DIR)))
@@ -102,7 +104,7 @@ def make_dirs() -> None:
     always shows where output will land -- silence here would otherwise
     hide a misconfigured BBOB_CORNN_ROOT until the first write fails.
     """
-    for d in [INPUT_DIR, BBOB_RAW_DIR, BBOB_ELA_DIR, BBOB_NG_DIR, BBOB_ADAM_DIR,
+    for d in [INPUT_DIR, BBOB_RAW_DIR, BBOB_ELA_DIR, BBOB_NG_DIR, BBOB_ADAM_DIR, BBOB_META_DIR,
               CORNN_RAW_DIR, CORNN_ELA_DIR, CORNN_NG_DIR, CORNN_ADAM_DIR, ISA_DIR]:
         if not d.is_dir():
             d.mkdir(parents=True, exist_ok=True)

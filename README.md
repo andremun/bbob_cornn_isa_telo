@@ -13,6 +13,8 @@ cornn_telo/
 │   ├── __init__.py
 │   └── config.py                    # All constants and paths (single source of truth)
 ├── cornn_config.m                   # MATLAB mirror of cornn/config.py
+├── bbob_collect_meta.py             # Provenance: trigger COCO observer -> .dat logs
+├── bbob_collect_fopt.m              # Provenance: extract fopt from COCO .dat logs
 ├── bbob_collect_raw_data.py         # Evaluate BBOB functions on Sobol grids
 ├── bbob_run_nevergrad.py            # BBOB nevergrad optimiser runs
 ├── bbob_run_adam.py                 # BBOB finite-difference Adam runs
@@ -35,6 +37,7 @@ cornn_telo/
 │   └── run_all_performance.sh       # All performance data (7020 tasks)
 ├── suite_largescale.c               # Modified COCO source (dims 41, 261, 481)
 ├── requirements.txt                 # Python 3.10 environment
+├── CITATION.cff                     # Machine-readable citation metadata
 └── README.md
 ```
 
@@ -69,19 +72,84 @@ bbob_cornn_isa/
 
 ### BBOB (custom build)
 
-The standard `cocoex` package does not support dimensions {41, 261, 481}.
-Build COCO v2.6.100 from source with the modified `suite_largescale.c`
-(provided in this repository):
+The standard `cocoex` package (installed via `pip install coco-experiment`)
+does not support dimensions {41, 261, 481}. A source build with a modified
+`suite_largescale.c` (provided in the root of this repository) is required.
+
+**Important — the upstream repository has been restructured.** The
+`numbbo/coco` monorepo is now archived/outdated; the actively maintained
+Python interface lives in a separate repository,
+[`numbbo/coco-experiment`](https://github.com/numbbo/coco-experiment), with
+a different build workflow than older instructions (`do.py run-python`)
+describe. As of writing, the documented build process is:
 
 ```bash
-git clone https://github.com/numbbo/coco.git
-cp suite_largescale.c coco/build/suite_largescale.c
-cd coco
-python do.py run-python
-pip install code-experiments/build/python
+git clone https://github.com/numbbo/coco-experiment.git
+cd coco-experiment
+# Locate the current path to suite_largescale.c under src/ and replace it
+# with the version in this repository's root, e.g.:
+find . -name suite_largescale.c
+cp ../suite_largescale.c <path found above>
+
+# Bundle the modified C sources into the language-specific build folders
+python scripts/fabricate
+
+# Build and install the Python bindings
+cd build/python
+pip install .
 ```
 
-`suite_largescale.c` is provided in the root of this repository.
+**Pin the exact version you build against.** The results in this paper
+were produced with `cocoex` version `2.6.100-dev34+ga1bd588d` -- a
+git-describe string indicating commit `a1bd588d`, 34 commits past the
+`2.6.100` reference point. Check out this exact commit before building to
+guarantee an identical build:
+
+```bash
+git checkout a1bd588d
+```
+
+To verify the version of an existing installation (`pip show
+coco-experiment` may not resolve if the package was installed under a
+different distribution name):
+
+```bash
+python -c "import cocoex; print(cocoex.__version__)"
+```
+
+**Compilation troubleshooting** (from upstream `DEVELOPMENT.md`):
+- On macOS with ARM, use `arch -arm64 pip install .`.
+- On older systems, you may need `CFLAGS="-std=c99" pip install .`.
+
+### CORNN (neural network training benchmark)
+
+CORNN (Malan & Cleghorn, 2022, *A Continuous Optimisation Benchmark Suite
+from Neural Network Regression*, LNCS vol. 13398 / arXiv:2109.05606) is
+Katherine Malan's benchmark suite and is **not** distributed on PyPI. It
+must be cloned and installed in editable mode:
+
+```bash
+git clone https://github.com/CWCleghornAI/CORNN.git CORNN
+cd CORNN
+pip install -r requirements.txt
+pip install -e .
+```
+
+The paper's methodology reports CORNN package v0.9; check out the
+matching tag/commit if the repository provides one, or confirm the
+installed version matches via `pip show CORNN`.
+
+**Why the directory structure matters.** `CORNN/lib/CORNN.py` uses a
+relative import (`import lib.Benchmark_Functions_2D_Definition`) that only
+resolves when the current working directory *is* the cloned CORNN root.
+This is why every CORNN-related script and SLURM job in this repository
+must be run from inside that same directory — `CORNN_REPO_DIR` (see
+"Running on a different machine or cluster" below) must point at the
+cloned CORNN root itself, not merely at some venv folder. In practice this
+means copying (or symlinking) this repository's `*.py` scripts, `cornn/`
+package, and `cornn_config.m` into the CORNN root alongside its own `lib/`
+directory. This is an artefact of CORNN's own import structure, not a
+choice made in this repository.
 
 ### MATLAB toolboxes
 
@@ -121,10 +189,28 @@ export SAMPLE_MODE=1
 In sample mode the scripts restrict to 2 BBOB functions (f1, f8) × 3 instances
 × dimension 41 × 1 replicate, and 1 CORNN function × 1 architecture, with
 runs reduced to 3 and the evaluation budget reduced to 500. Task dispatch is
-bypassed entirely, so each bare `python <script>.py` command processes the
-whole sample subset in one go. The full pipeline completes in approximately
-10 minutes on a standard laptop. See [CONFIGURATION.md](CONFIGURATION.md)
-for the exact command sequence and what each script produces.
+bypassed entirely, so each bare `python <script>.py` command below processes
+the whole sample subset in one go — no SLURM, no cluster, no environment
+variables beyond `SAMPLE_MODE=1`:
+
+```bash
+export SAMPLE_MODE=1
+
+python bbob_collect_raw_data.py    # both sample functions,        ~1 min
+python bbob_run_pflacco.py         # both sample functions,        ~1 min
+python bbob_run_nevergrad.py       # 4 algs x 2 fns, 3 runs each,  ~2 min
+python bbob_run_adam.py            # 2 functions, 3 runs each,     ~1 min
+python cornn_collect_raw_data.py   # first fn x first arch,        ~1 min
+python cornn_run_pflacco.py        # first fn x first arch,        ~1 min
+python cornn_run_nevergrad.py      # 4 algs, 3 runs each,          ~2 min
+python cornn_run_adam.py           # 3 runs,                       ~1 min
+```
+
+The full pipeline completes in approximately 10 minutes on a standard
+laptop, with no need to create the venv/repo directory layout the SLURM
+scripts assume (see "Running on a different machine or cluster" below).
+See [CONFIGURATION.md](CONFIGURATION.md) for exactly what each command
+restricts and produces.
 
 For MATLAB post-processing in sample mode:
 ```matlab
@@ -139,6 +225,31 @@ to be skipped entirely for post-processing verification.
 
 ---
 
+## Running on a different machine or cluster
+
+The SLURM scripts in `slurm/` assume the authors' own directory layout: a
+Python venv at `~/venvs/CORNN/` with this repository's scripts copied into
+`~/venvs/CORNN/CORNN/` (required so `import lib.CORNN` resolves -- see
+`CONFIGURATION.md`). Both paths are overridable without editing any script:
+
+```bash
+sbatch --export=CORNN_VENV_DIR=/path/to/your/venv,CORNN_REPO_DIR=/path/to/this/repo \
+    slurm/run_collect_raw_data.sh
+```
+
+The `module load` lines are specific to SPARTAN (The University of Melbourne
+HPC) and will not exist on a different cluster. Edit the `module purge` /
+`module load` block near the top of each script in `slurm/` to match your
+own environment's module names, or remove it entirely if you are using a
+container or a pre-built environment where the packages in
+`requirements.txt` are already installed and importable without modules.
+
+If you are not using SLURM at all, skip the `slurm/` scripts entirely and
+use the bare Python commands shown under each step below, or `SAMPLE_MODE`
+for a fast local check (see "Sample mode" above).
+
+---
+
 ## Execution order
 
 Each step below prints a start banner, an `[OK]`/`[WARN]`/`[SKIP]` line for
@@ -146,12 +257,43 @@ every file it reads or writes, and an end-of-stage summary count -- the
 console log always shows how far a run progressed and where its output
 landed, even on failure.
 
+### Step 0 — Obtain `bbob_fopt.csv` (required before Step 5)
+
+`shared_consolidate_raw_data.m` needs the known optimal value for every
+BBOB function/instance/dimension combination to compute residuals; these
+are not derivable from the raw landscape data alone. Place this file at:
+
+```
+bbob_cornn_isa/bbob/meta/bbob_fopt.csv
+```
+
+This file ships as part of the paper's data release (see
+[Citation](#citation) for the Figshare DOI) rather than being produced by
+any script in this pipeline. If you are setting up a fresh environment,
+obtain it from there and copy it into place before running Step 5.
+
+**Full provenance chain (optional, not part of the required pipeline).**
+`bbob_collect_meta.py` triggers a COCO observer to write per-function
+`.dat` logs, and `bbob_collect_fopt.m` parses those logs into
+`bbob_fopt.csv`. Running both in sequence regenerates the file from
+scratch instead of obtaining it from Figshare:
+
+```bash
+python bbob_collect_meta.py    # writes .dat logs under bbob/meta/
+```
+```matlab
+bbob_collect_fopt              % parses .dat logs -> bbob_fopt.csv
+```
+
+Both scripts respect `SAMPLE_MODE`, so this chain also works for the fast
+local sample-mode check described above.
+
 ### Step 1 — Generate Sobol input grids (MATLAB, run once)
 
 ```matlab
 shared_collect_input_samples
 ```
-**Output:** `input/X_D{dim}_S100_R{sid}.csv` — 15 files in full mode, 3 in sample mode.
+**Output:** `input/X_D{dim}_S100_R{sid}.csv` — 15 files in full mode, 1 in sample mode.
 
 ### Step 2 — Collect raw landscape data (cluster)
 
@@ -161,6 +303,14 @@ sbatch slurm/run_collect_raw_data.sh
 **Output:** `bbob/raw/F{fid}_D{dim}_I{iid}_S100_R{sid}.csv` (5400 files) and
 `cornn/raw/F_{fcn}_{arch}_S100_R{sid}.csv` (1620 files).
 
+**Without SLURM** — each array task runs one bare Python command; a single
+task looks like `TASK_ID=1 python bbob_collect_raw_data.py`. The full stage
+without a scheduler (same total work, run serially):
+```bash
+for i in $(seq 1 1080); do TASK_ID=$i python bbob_collect_raw_data.py;  done
+for i in $(seq 1 324);  do TASK_ID=$i python cornn_collect_raw_data.py; done
+```
+
 ### Step 3 — Compute ELA features (cluster, after Step 2)
 
 ```bash
@@ -168,6 +318,12 @@ sbatch --dependency=afterok:<STEP2_JOBID> slurm/run_collect_pflacco.sh
 ```
 **Output:** `bbob/ela/ELA_F{fid}_D{dim}_S100_R{sid}.csv` (360 files) and
 `cornn/ela/ELA_F_{fcn}_{arch}_S100_R{sid}.csv` (324 files).
+
+**Without SLURM** (after Step 2 has produced `bbob/raw/` and `cornn/raw/`):
+```bash
+for i in $(seq 1 360); do TASK_ID=$i python bbob_run_pflacco.py;  done
+for i in $(seq 1 324); do TASK_ID=$i python cornn_run_pflacco.py; done
+```
 
 ### Step 4 — Run optimiser performance experiments (cluster)
 
@@ -177,6 +333,16 @@ sbatch slurm/run_all_performance.sh
 **Output:** `bbob/nevergrad/`, `bbob/adam/`, `cornn/nevergrad/`,
 `cornn/adam/` — one CSV per (algorithm, instance, run); 129,600 + 32,400 +
 38,880 + 9,720 files respectively.
+
+**Without SLURM** — this is the full-scale dataset (the same total compute
+as the cluster job, just serial, so this will take a long time on a single
+machine; see "Sample mode" above for a fast local check instead):
+```bash
+for i in $(seq 1 4320); do TASK_ID=$i python bbob_run_nevergrad.py;  done
+for i in $(seq 1 1080); do TASK_ID=$i python bbob_run_adam.py;       done
+for i in $(seq 1 1296); do TASK_ID=$i python cornn_run_nevergrad.py; done
+for i in $(seq 1 324);  do TASK_ID=$i python cornn_run_adam.py;      done
+```
 
 ### Step 5 — Post-processing (MATLAB)
 
@@ -277,6 +443,10 @@ If you use this code or data in your research, please cite:
   url       = {https://doi.org/10.26188/32609130}
 }
 ```
+
+A machine-readable [CITATION.cff](CITATION.cff) is also provided at the
+repository root; GitHub uses this to render a "Cite this repository"
+button automatically.
 
 ---
 

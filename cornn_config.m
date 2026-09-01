@@ -123,6 +123,19 @@ if cfg.sample_mode
     fprintf('[INFO] SAMPLE_MODE active: dimensions=41, functions=2, instances=3, replicates=1\n');
 end
 
+% Canonical BBOB function/instance ID lists (mirrors cornn/config.py).
+% Any script that enumerates BBOB functions or instances manually should
+% iterate over these, not over 1:cfg.n_bbob_functions, since the sample
+% subset {1, 8} is not a contiguous range and a range-based loop would
+% silently process the wrong functions in sample mode.
+if cfg.sample_mode
+    cfg.bbob_function_ids = [1, 8];
+    cfg.bbob_instance_ids = [1, 2, 3];
+else
+    cfg.bbob_function_ids = 1:cfg.n_bbob_functions;
+    cfg.bbob_instance_ids = 1:cfg.n_bbob_instances;
+end
+
 % =============================================================================
 % SECTION FLAGS  (used by shared_generate_instance_space.m)
 % =============================================================================
