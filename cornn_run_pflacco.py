@@ -110,6 +110,11 @@ for fcn in function_dictionary:
                     "function": f"F_{fcn_tag}_{arch_tag}_{loss_type}_S{SAMPLE_SIZE}_R{sid}"
                 }
                 for name, fn, kwargs in [
+                    # ela_meta is computed only at dim=41, never at 261/481 --
+                    # same restriction, same caveat about the unconfirmed
+                    # rationale, as bbob_run_pflacco.py; see the comment
+                    # there and CONFIGURATION.md's "ELA feature computation"
+                    # note.
                     ("ela_meta",  calculate_ela_meta if (HAS_ELA_META and dim == 41) else None, {}),
                     ("ela_distr", calculate_ela_distribution, {}),
                     ("ela_level", calculate_ela_level, {}),

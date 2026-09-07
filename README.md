@@ -8,7 +8,7 @@ training benchmark suite with the BBOB large-scale noiseless benchmark suite.
 ## Repository structure
 
 ```
-cornn_telo/
+bbob_cornn_isa/
 ├── cornn/
 │   ├── __init__.py
 │   └── config.py                    # All constants and paths (single source of truth)
@@ -196,14 +196,14 @@ variables beyond `SAMPLE_MODE=1`:
 ```bash
 export SAMPLE_MODE=1
 
-python bbob_collect_raw_data.py    # both sample functions,        ~1 min
-python bbob_run_pflacco.py         # both sample functions,        ~1 min
-python bbob_run_nevergrad.py       # 4 algs x 2 fns, 3 runs each,  ~2 min
-python bbob_run_adam.py            # 2 functions, 3 runs each,     ~1 min
-python cornn_collect_raw_data.py   # first fn x first arch,        ~1 min
-python cornn_run_pflacco.py        # first fn x first arch,        ~1 min
-python cornn_run_nevergrad.py      # 4 algs, 3 runs each,          ~2 min
-python cornn_run_adam.py           # 3 runs,                       ~1 min
+python bbob_collect_raw_data.py    # 2 fns x 3 instances,               ~1 min
+python bbob_run_pflacco.py         # 2 fns x 3 instances,               ~1 min
+python bbob_run_nevergrad.py       # 4 algs x 2 fns x 3 instances x 3 runs, ~2 min
+python bbob_run_adam.py            # 2 fns x 3 instances x 3 runs,      ~1 min
+python cornn_collect_raw_data.py   # first fn x first arch,             ~1 min
+python cornn_run_pflacco.py        # first fn x first arch,             ~1 min
+python cornn_run_nevergrad.py      # 4 algs x 3 runs,                   ~2 min
+python cornn_run_adam.py           # 3 runs,                            ~1 min
 ```
 
 The full pipeline completes in approximately 10 minutes on a standard
@@ -317,7 +317,11 @@ for i in $(seq 1 324);  do TASK_ID=$i python cornn_collect_raw_data.py; done
 sbatch --dependency=afterok:<STEP2_JOBID> slurm/run_collect_pflacco.sh
 ```
 **Output:** `bbob/ela/ELA_F{fid}_D{dim}_S100_R{sid}.csv` (360 files) and
-`cornn/ela/ELA_F_{fcn}_{arch}_S100_R{sid}.csv` (324 files).
+`cornn/ela/ELA_F_{fcn}_{arch}_S100_R{sid}.csv` (1620 files — one per
+(fcn, arch) task **times 5 replicates**, since `cornn_run_pflacco.py`
+writes a separate file per `sid` inside each task; this differs from the
+BBOB ELA case, where each of the 360 tasks already corresponds to one
+`(dim, sid, fid)` triple and writes exactly one file).
 
 **Without SLURM** (after Step 2 has produced `bbob/raw/` and `cornn/raw/`):
 ```bash
@@ -373,14 +377,21 @@ overridable via an environment variable, e.g.
 |---|---|---|---|
 | 1 — Sobol grids | CSV files in `input/` | `ls input/ \| wc -l` → 15 (3 dims × 5 reps) | → 1 (1 dim × 1 rep) |
 | 2 — BBOB raw | CSV files in `bbob/raw/` | `ls bbob/raw/ \| wc -l` → 5400 (24×15×3×5) | → 6 (2×3×1×1) |
-| 3 — ELA features | CSV files in `bbob/ela/` | `ls bbob/ela/ \| wc -l` → 360 (3×5×24) | → 2 (1×1×2) |
-| 4 — Performance | CSV files in `bbob/nevergrad/` | `ls bbob/nevergrad/ \| wc -l` → 129600 (4×24×15×3×30) | → 72 (4×2×3×1×3) |
+| 2 — CORNN raw | CSV files in `cornn/raw/` | `ls cornn/raw/ \| wc -l` → 1620 (54×6×5) | → 1 (1×1×1) |
+| 3 — BBOB ELA | CSV files in `bbob/ela/` | `ls bbob/ela/ \| wc -l` → 360 (3×5×24) | → 2 (1×1×2) |
+| 3 — CORNN ELA | CSV files in `cornn/ela/` | `ls cornn/ela/ \| wc -l` → 1620 (54×6×5 — one file per replicate, not per task; see Step 3 above) | → 1 (1×1×1) |
+| 4 — BBOB performance | CSV files in `bbob/nevergrad/` | `ls bbob/nevergrad/ \| wc -l` → 129600 (4×24×15×3×30) | → 72 (4×2×3×1×3) |
+| 4 — CORNN performance | CSV files in `cornn/nevergrad/` | `ls cornn/nevergrad/ \| wc -l` → 38880 (4×54×6×30) | → 12 (4×1×1×3) |
 | 5 — MATLAB | Files in `isa/` | `BBOB_CORNN_metadata.csv` exists | same |
 
 Counts are (functions or dims) × (instances or archs) × (dims) × (reps or
-runs), matching the loop order in each script -- see
-[CONFIGURATION.md](CONFIGURATION.md) for the full breakdown, including the
-matching CORNN counts.
+runs), matching the loop order in each script. `bbob/adam/` and
+`cornn/adam/` are not separately checked here (same loop structure as
+their `nevergrad` counterparts, one row per run) — see Step 4's own
+Output line above for their full-mode counts. See
+[CONFIGURATION.md](CONFIGURATION.md) for the sample-mode parameter
+values (which functions/instances/architectures are selected, etc.)
+behind these counts.
 
 ---
 

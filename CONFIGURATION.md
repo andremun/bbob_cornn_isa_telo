@@ -85,6 +85,36 @@ compute time. The value `100 × D` follows best practice from Renau et al.
 
 ---
 
+## ELA feature computation
+
+`bbob_run_pflacco.py` and `cornn_run_pflacco.py` compute the same feature
+sets, with one dimension-dependent exception:
+
+| Feature set | Computed at |
+|---|---|
+| `ela_meta` | dim=41 only |
+| `ela_distr`, `ela_level`, `disp`, `ic`, `nbc`, `pca`, `fdc` | all dimensions |
+
+This is not exposed as a configuration parameter — it is hardcoded as
+`dim == 41` at the `ela_meta` entry in both scripts' feature-list. The
+rationale was not recorded when this was added; a plausible explanation
+is that `ela_meta`'s quadratic-model fit requires on the order of
+`dim^2/2` coefficients, which `SAMPLE_SIZE=100` points per dimension can
+no longer comfortably support once `dim` exceeds ~41 — but this has not
+been confirmed against pflacco's own internals, so treat it as a
+hypothesis, not a documented design decision. If you change
+`SAMPLE_SIZE` or add a dimension between 41 and 261, re-examine whether
+this threshold still makes sense.
+
+**Consequence:** `ELA_F*_D41_*.csv` files have `ela_meta.*` columns that
+`ELA_F*_D261_*.csv` / `ELA_F*_D481_*.csv` files do not. This is handled
+correctly by `shared_consolidate_raw_data.m`'s use of `tblvertcat.m` (an
+outer join that fills missing columns with NaN rather than erroring or
+misaligning columns) — not a source of corrupted data, just a schema
+difference to be aware of if you write your own consolidation code.
+
+---
+
 ## BBOB suite
 
 | Parameter | Default | Notes |
@@ -228,13 +258,13 @@ the full portfolio).
 
 ```bash
 export SAMPLE_MODE=1
-python bbob_collect_raw_data.py    # both sample functions, ~1 min
-python bbob_run_pflacco.py         # both sample functions, ~1 min
-python bbob_run_nevergrad.py       # all 4 algorithms x 2 functions, 3 runs each, ~2 min
-python bbob_run_adam.py            # 2 functions, 3 runs each, ~1 min
+python bbob_collect_raw_data.py    # 2 functions x 3 instances, ~1 min
+python bbob_run_pflacco.py         # 2 functions x 3 instances, ~1 min
+python bbob_run_nevergrad.py       # 4 algorithms x 2 functions x 3 instances x 3 runs, ~2 min
+python bbob_run_adam.py            # 2 functions x 3 instances x 3 runs, ~1 min
 python cornn_collect_raw_data.py   # first function x first architecture, ~1 min
 python cornn_run_pflacco.py        # first function x first architecture, ~1 min
-python cornn_run_nevergrad.py      # all 4 algorithms, 3 runs each, ~2 min
+python cornn_run_nevergrad.py      # 4 algorithms x 3 runs, ~2 min
 python cornn_run_adam.py           # 3 runs, ~1 min
 ```
 

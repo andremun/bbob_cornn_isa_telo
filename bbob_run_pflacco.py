@@ -92,6 +92,18 @@ for dim in DIMENSIONS:
 
                 rec = {"function": f"F{fid}_D{dim}_I{iid}_S{SAMPLE_SIZE}_R{sid}"}
                 for name, fn, kwargs in [
+                    # ela_meta is computed only at dim=41, never at 261/481 --
+                    # NOT documented elsewhere (see CONFIGURATION.md's "ELA
+                    # feature computation" note). This was not written down
+                    # with a rationale when this restriction was added;
+                    # a likely reason is that ela_meta's quadratic-model fit
+                    # needs ~dim^2/2 coefficients, which SAMPLE_SIZE=100
+                    # points-per-dim can no longer comfortably support once
+                    # dim exceeds ~41 -- but this has not been confirmed
+                    # against pflacco's own internals. The resulting per-
+                    # dimension column difference is handled correctly by
+                    # tblvertcat.m downstream (outer join, missing columns
+                    # filled with NaN), not a source of corrupted data.
                     ("ela_meta",   calculate_ela_meta if (HAS_ELA_META and dim == 41) else None, {}),
                     ("ela_distr",  calculate_ela_distribution, {}),
                     ("ela_level",  calculate_ela_level, {}),
