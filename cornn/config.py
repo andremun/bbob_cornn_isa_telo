@@ -76,6 +76,15 @@ BBOB_NG_DIR     = ROOT_DATA_DIR / "bbob"  / "nevergrad"
 BBOB_ADAM_DIR   = ROOT_DATA_DIR / "bbob"  / "adam"
 BBOB_META_DIR   = ROOT_DATA_DIR / "bbob"  / "meta"  # bbob_fopt.csv and .dat observer logs
 
+# COCO's Observer always nests its output one level below the folder it is
+# given -- "result_folder" is a subfolder *name* joined under a separate
+# "outer_folder" option (default "exdata", relative to the CWD), not an
+# absolute destination. bbob_collect_meta.py sets outer_folder:BBOB_META_DIR
+# and result_folder:BBOB_META_OBS_SUBDIR so the .dat logs land at
+# {BBOB_META_DIR}/{BBOB_META_OBS_SUBDIR}/data_f{fid}/... instead of being
+# silently nested under a stray ./exdata/<absolute-path> in the CWD.
+BBOB_META_OBS_SUBDIR = "obs_logs"
+
 CORNN_RAW_DIR   = ROOT_DATA_DIR / "cornn" / "raw"
 CORNN_ELA_DIR   = ROOT_DATA_DIR / "cornn" / "ela"
 CORNN_NG_DIR    = ROOT_DATA_DIR / "cornn" / "nevergrad"

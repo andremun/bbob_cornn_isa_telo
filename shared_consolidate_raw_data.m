@@ -227,13 +227,23 @@ inc = 1;
 ii = 1;
 n_incomplete = 0;
 while ii<number_files
+    % filelist mixes this instance's 4 nevergrad algorithm files with its
+    % Adam file (written into the same consol dir); "Adam" sorts before
+    % "CMA" alphabetically, so ii does not always point at a "_CMA" file --
+    % skip forward (as the CORNN AUC loop below already does) instead of
+    % indexing into an empty match.
     index_run = strfind(filelist{ii},'_CMA');
+    if isempty(index_run)
+        ii = ii + 1;
+        continue
+    end
     fcn = filelist{ii}(1:index_run(end)-1);
     area_under_the_curve_bbob{inc,1} = fcn;
     index_files = find(contains(filelist,fcn));
     if length(index_files)<number_algorithms
         fprintf('[WARN] %s is incomplete (%d/%d algorithms)\n', fcn, length(index_files), number_algorithms);
         n_incomplete = n_incomplete + 1;
+        ii = index_files(end) + 1;
         continue
     end
 
@@ -245,6 +255,7 @@ while ii<number_files
     if ~any(id)
         fprintf('[WARN] %s: no matching row in bbob_fopt.csv, skipping\n', fcn);
         n_incomplete = n_incomplete + 1;
+        ii = index_files(end) + 1;
         continue
     end
 
@@ -279,6 +290,12 @@ end
 
 area_under_the_curve_bbob = cell2table(area_under_the_curve_bbob, ...
                                        'VariableNames', algorithm_header);
+% cell2table silently collapses a column of equal-length char row vectors
+% into a 2-D char matrix instead of keeping it as text; this only bites in
+% SAMPLE_MODE, where a single dimension makes every Function name the same
+% length (full mode varies in length across dims 41/261/481), and 2-D char
+% matrices fail replace()/contains() below with "First argument must be text".
+area_under_the_curve_bbob.Function = cellstr(area_under_the_curve_bbob.Function);
 out_path = fullfile(isa_dir, 'BBOB_area_under_the_curve.csv');
 writetable(area_under_the_curve_bbob, out_path);
 fprintf('[OK] Wrote %s (%d instances, %d incomplete/skipped)\n', out_path, inc-1, n_incomplete);
@@ -352,6 +369,7 @@ end
 
 area_under_the_curve_cornn = cell2table(area_under_the_curve_cornn, ...
                                         'VariableNames', algorithm_header);
+area_under_the_curve_cornn.Function = cellstr(area_under_the_curve_cornn.Function);
 out_path = fullfile(isa_dir, 'CORNN_area_under_the_curve.csv');
 writetable(area_under_the_curve_cornn, out_path);
 fprintf('[OK] Wrote %s (%d train/test instances, %d incomplete/skipped)\n', out_path, inc-1, n_incomplete);
@@ -390,14 +408,27 @@ print(gcf, '-dpng', out_path);
 fprintf('[OK] Wrote %s\n', out_path);
 
 figure;
+plotted_algorithms = {};
 for jj = 1:number_algorithms
     current_fevals = squeeze(expected_fevals(:,jj,:));
-    [Fax,Xax] = ecdf(log10(current_fevals(:)), 'Censoring', isinf(current_fevals(:)));
+    censored = isinf(current_fevals(:));
+    if all(censored)
+        % ecdf() on all-censored data returns F/X of mismatched lengths,
+        % which line() then rejects -- this only bites in SAMPLE_MODE,
+        % where the reduced budget/instance set can leave an algorithm
+        % with zero successes across the whole sample.
+        fprintf('[WARN] %s: all targets censored (never solved within budget) -- skipping ECDF line\n', algorithm_names{jj});
+        continue
+    end
+    [Fax,Xax] = ecdf(log10(current_fevals(:)), 'Censoring', censored);
     Xax = [Xax' max_fevals 6];
     Fax = [Fax' max(Fax) max(Fax)];
     line(Xax,Fax,'LineWidth',1.5);
+    plotted_algorithms{end+1} = algorithm_names{jj}; %#ok<AGROW>
 end
-legend(algorithm_names,'Location','northeast');
+if ~isempty(plotted_algorithms)
+    legend(plotted_algorithms,'Location','northeast');
+end
 xlabel('log_{10}(F_{evals})'); ylabel('Probability reaching target');
 axis([-1 6 0 1]); axis square; grid;
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
@@ -439,16 +470,35 @@ end
 instance_list = unique(pflacco_data.xFunction);
 fprintf('Averaging features across replicates for %d unique instances\n', length(instance_list));
 
-inc = 1;
-for ii=1:length(instance_list)
+% pflacco_avg is pre-sized to its final row count up front: assigning into
+% row ii>1 of a 1-row table (the previous approach) requires MATLAB to
+% auto-grow the table while only columns 2:end are specified, and filling
+% the untouched 'xFunction' (cell) column for that new row with the
+% generic double-typed default fails with "Conversion to cell from double
+% is not possible" -- observed on R2026a; pre-sizing avoids ever growing
+% a partially-specified row. ('ErrorHandler', @errorFunc) was previously
+% passed to varfun here, but errorFunc is not defined anywhere in this
+% repository -- every ELA feature column is numeric so mean() never
+% actually errors, but a real error would have failed harder by calling
+% a nonexistent function; removed rather than left as an untested handler.
+n_instances = length(instance_list);
+for ii=1:n_instances
     idx = contains(pflacco_data.xFunction,instance_list{ii});
+    r = varfun(@mean, pflacco_data(idx,2:end));
     if ii == 1
-        pflacco_avg = varfun(@mean, pflacco_data(idx,2:end), 'ErrorHandler', @errorFunc);
-        pflacco_avg = addvars(pflacco_avg, {instance_list{ii}}, 'NewVariableNames', 'xFunction', 'Before','mean_ela_distr_skewness');
+        pflacco_avg = repmat(r, n_instances, 1);
+        % 'Before', 1 (a position, not a column name) puts xFunction first
+        % unconditionally -- anchoring on a specific feature column name
+        % (as a previous version of this code did) breaks whenever the
+        % feature set's column order differs, e.g. ela_meta is present for
+        % every row in SAMPLE_MODE's single dimension but only for a subset
+        % of rows in full mode's mixed dimensions, shifting where it lands.
+        pflacco_avg = addvars(pflacco_avg, repmat({instance_list{ii}}, n_instances, 1), ...
+            'NewVariableNames', 'xFunction', 'Before', 1);
     else
-        pflacco_avg(ii,2:end) = varfun(@mean, pflacco_data(idx,2:end), 'ErrorHandler', @errorFunc);
-        pflacco_avg(ii,'xFunction') = {instance_list{ii}};
+        pflacco_avg(ii,2:end) = r;
     end
+    pflacco_avg(ii,'xFunction') = {instance_list{ii}};
 end
 pflacco_avg = renamevars(pflacco_avg,pflacco_avg.Properties.VariableNames,pflacco_data.Properties.VariableNames);
 pflacco_avg.xFunction = replace(pflacco_avg.xFunction,'_S100','');

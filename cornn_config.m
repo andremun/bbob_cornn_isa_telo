@@ -53,6 +53,11 @@ cfg.bbob_ng_dir    = fullfile(cfg.root_dir, 'bbob', 'nevergrad');
 cfg.bbob_adam_dir  = fullfile(cfg.root_dir, 'bbob', 'adam');
 cfg.bbob_meta_dir  = fullfile(cfg.root_dir, 'bbob', 'meta');
 
+% Subfolder BBOB_COLLECT_META.PY passes to COCO's observer as
+% "result_folder" (joined under "outer_folder:cfg.bbob_meta_dir"), so the
+% .dat logs land at {bbob_meta_dir}/{bbob_meta_obs_subdir}/data_f{fid}/...
+cfg.bbob_meta_obs_subdir = 'obs_logs';
+
 cfg.cornn_raw_dir  = fullfile(cfg.root_dir, 'cornn', 'raw');
 cfg.cornn_ela_dir  = fullfile(cfg.root_dir, 'cornn', 'ela');
 cfg.cornn_ng_dir   = fullfile(cfg.root_dir, 'cornn', 'nevergrad');
@@ -120,7 +125,14 @@ if cfg.sample_mode
     cfg.n_bbob_functions  = 2;     % functions 1 and 8 only
     cfg.n_bbob_instances  = 3;     % instances 1-3 only
     cfg.n_replicates      = 1;
-    fprintf('[INFO] SAMPLE_MODE active: dimensions=41, functions=2, instances=3, replicates=1\n');
+    % Must mirror cornn/config.py's SAMPLE_RUNS/SAMPLE_BUDGET -- without
+    % this, shared_consolidate_raw_data.m still compares run counts against
+    % the full-scale n_runs=30, finds only 3 files per instance, and marks
+    % every instance "incomplete", silently skipping all of them.
+    cfg.n_runs            = 3;
+    cfg.budget            = 500;
+    fprintf(['[INFO] SAMPLE_MODE active: dimensions=41, functions=2, ' ...
+             'instances=3, replicates=1, runs=3, budget=500\n']);
 end
 
 % Canonical BBOB function/instance ID lists (mirrors cornn/config.py).

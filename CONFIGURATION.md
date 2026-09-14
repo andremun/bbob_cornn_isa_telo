@@ -41,6 +41,7 @@ Individual subdirectories can also be overridden independently:
 | BBOB ELA features | `BBOB_ELA_DIR` |
 | BBOB nevergrad runs | `BBOB_NG_DIR` |
 | BBOB Adam runs | `BBOB_ADAM_DIR` |
+| BBOB metadata (`bbob_fopt.csv`) | `BBOB_META_DIR` |
 | CORNN raw evaluations | `CORNN_RAW_DIR` |
 | CORNN ELA features | `CORNN_ELA_DIR` |
 | CORNN nevergrad runs | `CORNN_NG_DIR` |
@@ -256,12 +257,24 @@ function and first architecture returned by `CORNN.get_benchmark_functions()`
 / `CORNN.get_NN_models()`, with all algorithms still exercised (to verify
 the full portfolio).
 
+```matlab
+setenv('SAMPLE_MODE', '1');
+shared_collect_input_samples       % Step 1 -- must run first, writes input/
+```
+
 ```bash
 export SAMPLE_MODE=1
 python bbob_collect_raw_data.py    # 2 functions x 3 instances, ~1 min
 python bbob_run_pflacco.py         # 2 functions x 3 instances, ~1 min
 python bbob_run_nevergrad.py       # 4 algorithms x 2 functions x 3 instances x 3 runs, ~2 min
 python bbob_run_adam.py            # 2 functions x 3 instances x 3 runs, ~1 min
+```
+
+The four `cornn_*.py` commands must run with the cloned CORNN repository as
+the current working directory (see README.md, Installation > CORNN):
+
+```bash
+export SAMPLE_MODE=1
 python cornn_collect_raw_data.py   # first function x first architecture, ~1 min
 python cornn_run_pflacco.py        # first function x first architecture, ~1 min
 python cornn_run_nevergrad.py      # 4 algorithms x 3 runs, ~2 min
@@ -304,7 +317,8 @@ shared_consolidate_raw_data.m
   reads ◄── bbob/{nevergrad,adam}/   cornn/{nevergrad,adam}/
   reads ◄── bbob/ela/                cornn/ela/
   reads ◄── bbob/meta/bbob_fopt.csv   [external data artifact, see README Step 0;
-                                       provenance chain: bbob_collect_meta.py ->
+                                       provenance chain: bbob_collect_meta.py
+                                       (writes bbob/meta/obs_logs/) ->
                                        bbob_collect_fopt.m]
   writes ──► isa/BBOB_area_under_the_curve.csv
   writes ──► isa/CORNN_area_under_the_curve.csv

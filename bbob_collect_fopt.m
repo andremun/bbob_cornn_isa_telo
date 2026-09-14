@@ -4,7 +4,7 @@
 %   for every (function, dimension, instance) combination, writing them
 %   to a single CSV consumed by SHARED_CONSOLIDATE_RAW_DATA.
 %
-%   Input (expected under CFG.BBOB_META_DIR):
+%   Input (expected under CFG.BBOB_META_DIR/CFG.BBOB_META_OBS_SUBDIR):
 %       data_f{fid}/bbobexp_f{fid}_DIM{dim}.dat
 %   one file per (function, dimension), each containing one row per
 %   instance with columns [.., .., measured, best_measured, ..]; fopt is
@@ -32,11 +32,12 @@
 %   Full license text: https://polyformproject.org/licenses/noncommercial/1.0.0
 
 cfg      = cornn_config();
-root_dir = cfg.bbob_meta_dir;
+root_dir = fullfile(cfg.bbob_meta_dir, cfg.bbob_meta_obs_subdir);
 
 if ~isfolder(root_dir)
     error('bbob_collect_fopt:missingDir', ...
-        'Expected directory not found: %s', root_dir);
+        ['Expected directory not found: %s\n' ...
+         'This is produced by bbob_collect_meta.py -- run that script first.'], root_dir);
 end
 
 fprintf('\n=== bbob_collect_fopt.m ===\n');
@@ -95,7 +96,7 @@ for ii = cfg.bbob_function_ids
 end
 
 fopt = array2table(fopt, 'VariableNames', {'xFunction','Dimension','Instance','Fopt'});
-out_path = fullfile(root_dir, 'bbob_fopt.csv');
+out_path = fullfile(cfg.bbob_meta_dir, 'bbob_fopt.csv');
 writetable(fopt, out_path);
 fprintf('[OK] Wrote %s (%d rows from %d .dat files)\n', out_path, height(fopt), n_files_read);
 

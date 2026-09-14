@@ -10,7 +10,7 @@ disk. Extraction of fopt from those logs into a single CSV is done by
 bbob_collect_fopt.m (MATLAB), which expects the observer's default
 per-function output layout:
 
-    {BBOB_META_DIR}/data_f{fid}/bbobexp_f{fid}_DIM{dim}.dat
+    {BBOB_META_DIR}/{BBOB_META_OBS_SUBDIR}/data_f{fid}/bbobexp_f{fid}_DIM{dim}.dat
 
 Together, this script and bbob_collect_fopt.m form the full provenance
 chain for bbob_fopt.csv. Most users should obtain bbob_fopt.csv directly
@@ -33,7 +33,7 @@ suite completes quickly.
 # non-commercial purpose. Commercial use is prohibited.
 # Full license text: https://polyformproject.org/licenses/noncommercial/1.0.0
 
-import os, sys
+import os, sys, shutil
 
 try:
     import cocoex
@@ -44,20 +44,35 @@ except Exception as e:
     ) from e
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from cornn.config import (
     BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS,
-    BBOB_META_DIR, SAMPLE_MODE, make_dirs,
+    BBOB_META_DIR, BBOB_META_OBS_SUBDIR, SAMPLE_MODE, make_dirs,
 )
 
 make_dirs()
 
+# COCO's Observer joins "result_folder" under a separate "outer_folder"
+# option (default "exdata", relative to the CWD) -- passing BBOB_META_DIR
+# directly as result_folder would silently nest the .dat logs under
+# ./exdata/<BBOB_META_DIR> instead of writing to BBOB_META_DIR itself.
+# Setting outer_folder explicitly makes BBOB_META_OBS_SUBDIR the actual
+# destination. Remove any previous run's subfolder first: COCO appends
+# _001, _002, ... to result_folder if it already exists, which would move
+# the logs out from under the fixed path bbob_collect_fopt.m expects.
+obs_dir = BBOB_META_DIR / BBOB_META_OBS_SUBDIR
+if obs_dir.is_dir():
+    shutil.rmtree(obs_dir)
+
 suite    = cocoex.Suite(BBOB_SUITE, BBOB_INSTANCES, BBOB_SETTINGS)
-observer = cocoex.Observer(BBOB_SUITE, f"result_folder:{BBOB_META_DIR}")
+observer = cocoex.Observer(
+    BBOB_SUITE, f"outer_folder:{BBOB_META_DIR} result_folder:{BBOB_META_OBS_SUBDIR}"
+)
 
 mode_msg = "[INFO] SAMPLE_MODE active: only sample functions/instances/dims logged" \
     if SAMPLE_MODE else "[INFO] Full-scale run: all functions/instances/dims logged"
 print(mode_msg)
-print(f"[INFO] Writing .dat logs under: {BBOB_META_DIR}")
+print(f"[INFO] Writing .dat logs under: {obs_dir}")
 
 n_ok = 0
 n_failed = 0
