@@ -190,7 +190,30 @@ if RUN_FEATURES
             end
             strong = unique(strong(~isnan(strong)));
             strong_backup = strong;
-            strong = strong([7 2 8 5]); % 7 10 2 8 5
+
+            % The final narrowing to 4 features is not a derivable rule --
+            % it is a one-time manual choice made when this analysis was
+            % first run (see e.g. the paper's discussion of nbc_nn_nb_cor,
+            % ela_level_mmce_qda_10, nbc_nb_fitness_cor, disp_ratio_median_02).
+            % A hardcoded POSITION into `strong` (e.g. strong([7 2 8 5]))
+            % only reproduces that choice when `strong`'s ordering (sorted
+            % by feature column index) happens to match the historical run
+            % that position vector was read off from -- an environment
+            % detail (file-listing order feeding meta_data's column order)
+            % with no scientific meaning, and NOT guaranteed to match here.
+            % Select by name instead, which is robust to that reordering.
+            paper_selected_features = {'nbc_nn_nb_cor', 'ela_level_mmce_qda_10', ...
+                                        'nbc_nb_fitness_cor', 'disp_ratio_median_02'};
+            sel = find(ismember(feature_names(strong), paper_selected_features));
+            if length(sel) == length(paper_selected_features)
+                strong = strong(sel);
+            else
+                fprintf(['[WARN] Not all %d of the paper''s named strong features were ' ...
+                         'found among this run''s cluster candidates -- keeping the ' ...
+                         'first %d candidates instead.\n'], ...
+                        length(paper_selected_features), min(4, length(strong)));
+                strong = strong(1:min(4, length(strong)));
+            end
 
             fprintf('[OK] Identified %d feature clusters; %d strong features selected for detailed analysis\n', ...
                     eva.OptimalK, length(strong));
