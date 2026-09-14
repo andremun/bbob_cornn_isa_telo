@@ -155,8 +155,8 @@ python -c "import cocoex; print(cocoex.__version__)"
 
 CORNN (Malan and Cleghorn, 2022, *A Continuous Optimisation Benchmark Suite
 from Neural Network Regression*, LNCS vol. 13398 / arXiv:2109.05606) is
-Katherine Malan's benchmark suite. It is **not** on PyPI, so you must
-clone and install it in editable mode.
+a neural network training benchmark suite. It is **not** on PyPI, so you
+must clone and install it in editable mode.
 
 **Clone it outside this repository**, not into a `CORNN` subfolder here.
 This repository already has a `cornn/` package directory. On a
