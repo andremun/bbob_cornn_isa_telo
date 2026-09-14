@@ -75,30 +75,30 @@ bbob_cornn_isa/
 
 ### BBOB (custom build)
 
-The standard `cocoex` package (installed via `pip install coco-experiment`)
-does not support dimensions {41, 261, 481}. A source build with a modified
-`suite_largescale.c` (provided in the root of this repository) is required.
+The standard `cocoex` package (installed with `pip install coco-experiment`)
+does not support dimensions {41, 261, 481}. This repository needs a source
+build with a modified `suite_largescale.c`, provided in the repository
+root.
 
-**Build prerequisites.** The build needs a C compiler and, per upstream's
-`env.yaml`, `pip>=22.3`, `numpy>=1.24`, `cython>=0.29`, and `hatchling>=1.26.3`
-available before `pip install .` is run (build isolation does not always
-pull these in automatically):
+**Build prerequisites.** The build needs a C compiler. Per upstream's
+`env.yaml`, it also needs `pip>=22.3`, `numpy>=1.24`, `cython>=0.29`, and
+`hatchling>=1.26.3` before you run `pip install .`. Build isolation does
+not always install these on its own:
 
 ```bash
 pip install "numpy>=1.24" "cython>=0.29" "hatchling>=1.26.3"
 ```
 
-**Option A — exact reproduction (recommended).** The results in this paper
-were produced with `cocoex` version `2.6.100-dev34+ga1bd588d`, a git-describe
-string identifying commit
+**Option A — exact reproduction (recommended).** The paper's results used
+`cocoex` version `2.6.100-dev34+ga1bd588d`. This git-describe string
+identifies commit
 [`a1bd588dd06a27e248aaa976c018bae759a296a0`](https://github.com/numbbo/coco/commit/a1bd588dd06a27e248aaa976c018bae759a296a0)
-**in the old `numbbo/coco` monorepo** -- not in `numbbo/coco-experiment`
-(that repository has an unrelated, independent history and does not contain
-this commit; `git checkout a1bd588d` will fail there with "unknown
-revision"). `numbbo/coco` is archived (read-only, no longer accepting
-changes) but remains clonable, and at this specific commit it already uses
-the `scripts/fabricate` build described below, so the historical snapshot
-still builds correctly today:
+in the old `numbbo/coco` monorepo, not in `numbbo/coco-experiment`. These
+two repositories have separate histories, and `numbbo/coco-experiment`
+does not contain this commit. `git checkout a1bd588d` fails there with an
+unknown revision error. `numbbo/coco` is archived and read-only, but you
+can still clone it. At this commit, it already uses the `scripts/fabricate`
+build shown below, so this historical snapshot still builds today:
 
 ```bash
 git clone https://github.com/numbbo/coco.git
@@ -116,13 +116,14 @@ cd code-experiments/build/python
 pip install .
 ```
 
-**Option B — general install.** If cloning the archived `numbbo/coco` repo
-above is not possible in your environment, the actively maintained
-[`numbbo/coco-experiment`](https://github.com/numbbo/coco-experiment) repo
-uses the same build workflow, just laid out at the repository root instead
-of under `code-experiments/`. This will not reproduce the exact pinned
-version above (there is nothing to check out that matches it), but the BBOB
-problem definitions themselves are unaffected by the version bump:
+**Option B — general install.** If you cannot clone the archived
+`numbbo/coco` repository, use the actively maintained
+[`numbbo/coco-experiment`](https://github.com/numbbo/coco-experiment)
+repository instead. It uses the same build workflow, laid out at the
+repository root instead of under `code-experiments/`. This path does not
+reproduce the exact pinned version above, since that commit does not
+exist there. The BBOB problem definitions stay the same regardless of
+this version difference:
 
 ```bash
 git clone https://github.com/numbbo/coco-experiment.git
@@ -138,9 +139,9 @@ cd build/python
 pip install .
 ```
 
-To verify the version of an existing installation (`pip show
-coco-experiment` may not resolve if the package was installed under a
-different distribution name):
+To check the version of an existing installation, run this command.
+`pip show coco-experiment` may not resolve if the package was installed
+under a different distribution name:
 
 ```bash
 python -c "import cocoex; print(cocoex.__version__)"
@@ -148,72 +149,74 @@ python -c "import cocoex; print(cocoex.__version__)"
 
 **Compilation troubleshooting** (from upstream `DEVELOPMENT.md`):
 - On macOS with ARM, use `arch -arm64 pip install .`.
-- On older systems, you may need `CFLAGS="-std=c99" pip install .`.
+- On older systems, use `CFLAGS="-std=c99" pip install .`.
 
 ### CORNN (neural network training benchmark)
 
-CORNN (Malan & Cleghorn, 2022, *A Continuous Optimisation Benchmark Suite
+CORNN (Malan and Cleghorn, 2022, *A Continuous Optimisation Benchmark Suite
 from Neural Network Regression*, LNCS vol. 13398 / arXiv:2109.05606) is
-Katherine Malan's benchmark suite and is **not** distributed on PyPI. It
-must be cloned and installed in editable mode -- **clone it outside this
-repository**, not into a `CORNN` subfolder here: this repository already
-has a `cornn/` package directory, and on a case-insensitive filesystem
-(the default on Windows and macOS) `CORNN` and `cornn` collide, and the
-clone fails:
+Katherine Malan's benchmark suite. It is **not** on PyPI, so you must
+clone and install it in editable mode.
+
+**Clone it outside this repository**, not into a `CORNN` subfolder here.
+This repository already has a `cornn/` package directory. On a
+case-insensitive filesystem, the default on Windows and macOS, `CORNN`
+and `cornn` collide, and the clone fails:
 
 ```bash
 cd ..                      # or any directory outside this repository
 git clone https://github.com/CWCleghornAI/CORNN.git CORNN
 ```
 
-**Do not run `pip install -e .` or `pip install -r requirements.txt` from
-inside the cloned repository.** Both are broken and unnecessary:
+**Do not run `pip install -e .` or `pip install -r requirements.txt` inside
+the cloned repository.** Both commands are broken and unnecessary:
 - CORNN's `setup.py` declares `packages=['CORNN']`, but the actual code
-  lives under `lib/`, not a `CORNN/` package directory -- `pip install -e .`
-  fails immediately with `package directory 'CORNN' does not exist`.
+  lives under `lib/`, not a `CORNN/` package directory. `pip install -e .`
+  fails immediately with the error `package directory 'CORNN' does not
+  exist`.
 - CORNN's `requirements.txt` pins `torch==1.9.0`, `numpy==1.20.1`, and
-  `pandas==1.2.3`, versions of which no longer have wheels for Python 3.10
-  on common platforms, and which conflict with the newer versions this
+  `pandas==1.2.3`. These versions no longer have wheels for Python 3.10 on
+  common platforms, and they conflict with the newer versions this
   repository's own `requirements.txt` already installs.
 
-Every script in this repository imports CORNN via `import lib.CORNN`, a
-plain filesystem-relative import -- no installation step is needed at all.
+Every script in this repository imports CORNN with `import lib.CORNN`, a
+plain filesystem-relative import. This needs no installation step at all.
 This repository's own `requirements.txt` (see "Python environment" below)
-already provides compatible `torch`/`numpy`/`pandas` versions; nothing
-further needs to be installed inside the CORNN clone.
+already provides compatible `torch`, `numpy`, and `pandas` versions. You
+need nothing further inside the CORNN clone.
 
-The paper's methodology reports CORNN package v0.9; check out the
-matching tag/commit if the repository provides one.
+The paper's methodology reports CORNN package v0.9. Check out the
+matching tag or commit if the repository provides one.
 
 **Why the directory structure matters.** `CORNN/lib/CORNN.py` uses a
-relative import (`import lib.Benchmark_Functions_2D_Definition`) that only
-resolves when the current working directory *is* the cloned CORNN root.
+relative import, `import lib.Benchmark_Functions_2D_Definition`, that only
+resolves when the current working directory is the cloned CORNN root.
 This is why every CORNN-related script and SLURM job in this repository
-must be run from inside that same directory — `CORNN_REPO_DIR` (see
-"Running on a different machine or cluster" below) must point at the
-cloned CORNN root itself, not merely at some venv folder. In practice this
-means copying (or symlinking) this repository's `*.py` scripts, `cornn/`
-package, and `cornn_config.m` into the CORNN root alongside its own `lib/`
-directory. This is an artefact of CORNN's own import structure, not a
-choice made in this repository.
+must run from inside that same directory. `CORNN_REPO_DIR` (see "Running
+on a different machine or cluster" below) must point at the cloned CORNN
+root itself, not at a venv folder. In practice, copy or symlink this
+repository's `*.py` scripts, `cornn/` package, and `cornn_config.m` into
+the CORNN root, alongside its own `lib/` directory. This comes from
+CORNN's own import structure, not from a choice made in this repository.
 
 ### MATLAB toolboxes
 
-The following MATILDA toolbox scripts are bundled directly in this repository:
-`TRACE.m`, `scriptfcn.m`, `KNNRegressor.m`. No separate MATILDA installation
-is needed.
+This repository bundles the following MATILDA toolbox scripts directly:
+`TRACE.m`, `scriptfcn.m`, `KNNRegressor.m`. It needs no separate MATILDA
+installation.
 
-The main PCA + t-SNE projection in `shared_generate_instance_space.m` uses
-MATLAB's built-in `tsne` (Statistics and Machine Learning Toolbox, R2017b or
-later). The feature-clustering step, however, needs t-SNE on a *precomputed*
-pairwise distance matrix, and that specific call is
-[Laurens van der Maaten's original t-SNE implementation](https://lvdmaaten.github.io/tsne/)
-(`tsne_d`, `tsne_p`, `d2p`, bundled directly in this repository) -- not
-MATLAB's own `tsne`. The two are different implementations, not
-interchangeable substitutes: MATLAB's `tsne` does not reliably support a
-`'Distance','precomputed'` input across releases (as of R2026a, `'precomputed'`
-is not a supported `Distance` value at all), and even where it does run, it
-does not reproduce `tsne_d`'s output. Use `tsne_d` for that call.
+The main PCA and t-SNE projection in `shared_generate_instance_space.m`
+uses MATLAB's built-in `tsne` (Statistics and Machine Learning Toolbox,
+R2017b or later). The feature-clustering step needs t-SNE on a
+*precomputed* pairwise distance matrix instead. That call uses
+[Laurens van der Maaten's original t-SNE implementation](https://lvdmaaten.github.io/tsne/):
+`tsne_d`, `tsne_p`, and `d2p`, bundled directly in this repository, not
+MATLAB's own `tsne`. These are different implementations, not
+interchangeable substitutes. MATLAB's `tsne` does not reliably support a
+`'Distance','precomputed'` input across releases. As of R2026a,
+`'precomputed'` is not a supported `Distance` value at all, and even
+where it does run, it does not reproduce `tsne_d`'s output. Use `tsne_d`
+for that call.
 
 Required MATLAB toolboxes: Statistics and Machine Learning Toolbox.
 
@@ -231,19 +234,20 @@ pip install -r requirements.txt
 
 ## Sample mode (local verification)
 
-To run the full pipeline locally without a cluster — for example, to verify
-each step produces the expected output — use sample mode:
+Sample mode runs the full pipeline locally, without a cluster. Use it to
+check that each step produces the expected output:
 
 ```bash
 export SAMPLE_MODE=1
 ```
 
-In sample mode the scripts restrict to 2 BBOB functions (f1, f8) × 3 instances
-× dimension 41 × 1 replicate, and 1 CORNN function × 1 architecture, with
-runs reduced to 3 and the evaluation budget reduced to 500. Task dispatch is
-bypassed entirely, so each bare `python <script>.py` command below processes
-the whole sample subset in one go — no SLURM, no cluster, no environment
-variables beyond `SAMPLE_MODE=1`:
+Sample mode restricts the scripts to 2 BBOB functions (f1, f8), 3
+instances, dimension 41, and 1 replicate. It also restricts CORNN to 1
+function and 1 architecture, with 3 runs and an evaluation budget of 500.
+Sample mode bypasses task dispatch entirely. Each bare `python
+<script>.py` command below then processes the whole sample subset in one
+go. This needs no SLURM, no cluster, and no environment variable beyond
+`SAMPLE_MODE=1`:
 
 ```matlab
 setenv('SAMPLE_MODE', '1');
@@ -259,11 +263,11 @@ python bbob_run_nevergrad.py       # 4 algs x 2 fns x 3 instances x 3 runs, ~2 m
 python bbob_run_adam.py            # 2 fns x 3 instances x 3 runs,      ~1 min
 ```
 
-The four `cornn_*.py` commands below must be run with the CORNN repository
-(cloned in "Installation" above) as the current working directory --
-CORNN's own relative import only resolves from there. Copy or symlink
-this repository's `cornn_*.py` scripts, `cornn/` package, and
-`cornn_config.m` into the CORNN root first, then run:
+Run the four `cornn_*.py` commands below with the CORNN repository
+(cloned in Installation above) as the current working directory. CORNN's
+own relative import only resolves from there. First copy or symlink this
+repository's `cornn_*.py` scripts, `cornn/` package, and `cornn_config.m`
+into the CORNN root. Then run:
 
 ```bash
 export SAMPLE_MODE=1
@@ -274,16 +278,16 @@ python cornn_run_nevergrad.py      # 4 algs x 3 runs,                   ~2 min
 python cornn_run_adam.py           # 3 runs,                            ~1 min
 ```
 
-The full pipeline completes in approximately 10 minutes on a standard
-laptop, with no need to create the venv/repo directory layout the SLURM
-scripts assume (see "Running on a different machine or cluster" below).
-See [CONFIGURATION.md](CONFIGURATION.md) for exactly what each command
+The full pipeline completes in about 10 minutes on a standard laptop. It
+needs no venv or repository directory layout, unlike the layout the
+SLURM scripts assume (see "Running on a different machine or cluster"
+below). See [CONFIGURATION.md](CONFIGURATION.md) for what each command
 restricts and produces.
 
-**Before the MATLAB step, `bbob/meta/bbob_fopt.csv` must exist** (see
-"Step 0" below). If you are testing sample mode without downloading the
-Figshare data release, it will not be there yet -- generate it locally
-instead (both scripts are `SAMPLE_MODE`-aware):
+**`bbob/meta/bbob_fopt.csv` must exist before the MATLAB step** (see
+"Step 0" below). If you test sample mode without the Figshare data
+release, this file does not yet exist. Generate it locally instead. Both
+scripts below respect `SAMPLE_MODE`:
 
 ```bash
 export SAMPLE_MODE=1
@@ -301,19 +305,20 @@ shared_consolidate_raw_data
 shared_generate_instance_space
 ```
 
-Intermediate data (Sobol grids, ELA features, AUC tables) for dimension 41
-are available on Figshare (see the paper for the DOI), allowing Steps 1–4
-(including `bbob_fopt.csv` above) to be skipped entirely for
-post-processing verification.
+Figshare provides intermediate data for dimension 41: Sobol grids, ELA
+features, and AUC tables (see the paper for the DOI). This lets you skip
+Steps 1-4, including `bbob_fopt.csv` above, for post-processing
+verification alone.
 
 ---
 
 ## Running on a different machine or cluster
 
-The SLURM scripts in `slurm/` assume the authors' own directory layout: a
-Python venv at `~/venvs/CORNN/` with this repository's scripts copied into
-`~/venvs/CORNN/CORNN/` (required so `import lib.CORNN` resolves -- see
-`CONFIGURATION.md`). Both paths are overridable without editing any script:
+The SLURM scripts in `slurm/` assume one default directory layout: a
+Python venv at `~/venvs/CORNN/`, with this repository's scripts copied
+into `~/venvs/CORNN/CORNN/`. This layout lets `import lib.CORNN` resolve
+(see `CONFIGURATION.md`). You can override both paths without editing
+any script:
 
 ```bash
 sbatch --export=CORNN_VENV_DIR=/path/to/your/venv,CORNN_REPO_DIR=/path/to/this/repo \
@@ -343,24 +348,25 @@ landed, even on failure.
 ### Step 0 — Obtain `bbob_fopt.csv` (required before Step 5)
 
 `shared_consolidate_raw_data.m` needs the known optimal value for every
-BBOB function/instance/dimension combination to compute residuals; these
-are not derivable from the raw landscape data alone. Place this file at:
+BBOB function, instance, and dimension combination, to compute residuals.
+The raw landscape data alone does not give you this value. Place this
+file at:
 
 ```
 bbob_cornn_isa/bbob/meta/bbob_fopt.csv
 ```
 
-This file ships as part of the paper's data release (see
-[Citation](#citation) for the Figshare DOI) rather than being produced by
-any script in this pipeline. If you are setting up a fresh environment,
-obtain it from there and copy it into place before running Step 5.
+This file ships with the paper's data release (see
+[Citation](#citation) for the Figshare DOI). No script in this pipeline
+produces it. If you set up a fresh environment, get it from there and
+copy it into place before you run Step 5.
 
-**No Figshare access (e.g. a first local sample-mode check)?** Regenerate
-it from scratch instead: `bbob_collect_meta.py` triggers a COCO observer to
-write per-function `.dat` logs under `bbob/meta/obs_logs/`, and
-`bbob_collect_fopt.m` parses those logs into `bbob/meta/bbob_fopt.csv`.
-This is a required step if you skip Figshare, not merely an optional
-provenance record -- run both, in order, before Step 5:
+**No Figshare access, for example on a first local sample-mode check?**
+Regenerate the file from scratch instead. `bbob_collect_meta.py` triggers
+a COCO observer that writes per-function `.dat` logs under
+`bbob/meta/obs_logs/`. `bbob_collect_fopt.m` then parses those logs into
+`bbob/meta/bbob_fopt.csv`. If you skip Figshare, this step is required,
+not optional. Run both, in order, before Step 5:
 
 ```bash
 python bbob_collect_meta.py    # writes .dat logs under bbob/meta/obs_logs/

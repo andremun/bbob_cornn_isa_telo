@@ -97,13 +97,11 @@ if RUN_PROJECTION
     fprintf('\n--- Computing PCA + t-SNE projection ---\n');
 
     retained_variance = 99.5;
-    % Column indices derived by name, not a hardcoded numeric range: the
-    % pflacco feature set actually produces 61 columns (not 52), and the
-    % exact count also varies with how many columns
-    % ismissing-based filtering above drops -- a fixed "2:53"/"54:end"
-    % split silently misclassified the trailing feature columns as
-    % algorithms (and vice versa), corrupting every downstream footprint/
-    % figure that treats "performance_idx" as the 5 real algorithms.
+    % Column indices come from matching names, not a fixed numeric range.
+    % The pflacco feature set can have a different number of columns,
+    % since the missing-value filter above removes a varying number of
+    % them. A fixed range does not adapt to this, and can misclassify a
+    % feature column as an algorithm, or the reverse.
     performance_idx = find(ismember(meta_data.Properties.VariableNames, cfg.algorithm_names));
     feature_idx     = setdiff(2:size(meta_data, 2), performance_idx);
 
@@ -135,14 +133,12 @@ if RUN_FEATURES
 
     rng('default');
     D = 1 - abs(corr(X));
-    % tsne_d/d2p/tsne_p (bundled at the repo root) are Laurens van der
-    % Maaten's original t-SNE toolbox, not MATLAB's Statistics and
-    % Machine Learning Toolbox tsne() -- a previous revision replaced this
-    % call with tsne(D, 'Distance', 'precomputed'), intending it as a
-    % dependency-free equivalent, but it is a different implementation
-    % (and, as of MATLAB R2026a, 'precomputed' is not even a supported
-    % Distance value any more, so that substitution no longer runs at
-    % all). Restored to match the original, published computation.
+    % tsne_d, d2p, and tsne_p, bundled at the repo root, are Laurens van
+    % der Maaten's original t-SNE toolbox. They are not MATLAB's
+    % Statistics and Machine Learning Toolbox tsne() function.
+    % tsne(D, 'Distance', 'precomputed') is not an equivalent substitute.
+    % It is a different implementation, and some MATLAB releases do not
+    % support 'precomputed' as a Distance value at all.
     Lambda = [];
     tsne_failed = false;
     try
@@ -152,17 +148,16 @@ if RUN_FEATURES
         fprintf('[WARN] tsne_d failed (%s)\n', e.message);
     end
 
-    % strong([7 2 8 5]) below is a fixed selection curated by hand from the
-    % feature clusters found in the paper's full-scale run -- it is not a
-    % generic computation and cannot be expected to reproduce on a
-    % different (esp. much smaller) sample. With SAMPLE_MODE's ~8
-    % instances, several features are degenerate (zero variance across
-    % so few, narrowly-chosen samples), corr(X) has NaN entries, and
-    % clustering either has no valid rows left or too few features for
-    % this specific index selection. Fall back to a fixed placeholder in
-    % that case so RUN_MODELS/RUN_FOOTPRINTS below -- which only need
-    % *some* valid feature indices to exercise their own code paths, not
-    % a statistically meaningful selection -- can still run.
+    % The final feature selection follows the paper's own choice of four
+    % named features. It is not a rule derivable purely from z1/z2
+    % correlation. SAMPLE_MODE's small sample size can make several
+    % features degenerate, with zero variance across so few, narrowly
+    % chosen instances. corr(X) can then contain NaN values, and
+    % clustering can leave no valid rows or too few features to match.
+    % When this happens, fall back to a fixed placeholder selection.
+    % RUN_MODELS and RUN_FOOTPRINTS below only need some valid feature
+    % indices to run their own code paths, not a statistically
+    % meaningful selection.
     fallback_failed = tsne_failed || isempty(Lambda) || any(isnan(Lambda(:)));
     if ~fallback_failed
         try
@@ -191,17 +186,16 @@ if RUN_FEATURES
             strong = unique(strong(~isnan(strong)));
             strong_backup = strong;
 
-            % The final narrowing to 4 features is not a derivable rule --
-            % it is a one-time manual choice made when this analysis was
-            % first run (see e.g. the paper's discussion of nbc_nn_nb_cor,
-            % ela_level_mmce_qda_10, nbc_nb_fitness_cor, disp_ratio_median_02).
-            % A hardcoded POSITION into `strong` (e.g. strong([7 2 8 5]))
-            % only reproduces that choice when `strong`'s ordering (sorted
-            % by feature column index) happens to match the historical run
-            % that position vector was read off from -- an environment
-            % detail (file-listing order feeding meta_data's column order)
-            % with no scientific meaning, and NOT guaranteed to match here.
-            % Select by name instead, which is robust to that reordering.
+            % The final narrowing to 4 features follows the paper's own
+            % choice, not a derivable rule. See the paper's discussion of
+            % nbc_nn_nb_cor, ela_level_mmce_qda_10, nbc_nb_fitness_cor,
+            % and disp_ratio_median_02. A position into `strong`, such as
+            % strong([7 2 8 5]), only works when `strong`'s order matches
+            % one specific run. `strong` is sorted by feature column
+            % index, which depends on file-listing order feeding into
+            % meta_data's column order. This order has no scientific
+            % meaning. Select by name instead, which is robust to a
+            % different column order.
             paper_selected_features = {'nbc_nn_nb_cor', 'ela_level_mmce_qda_10', ...
                                         'nbc_nb_fitness_cor', 'disp_ratio_median_02'};
             sel = find(ismember(feature_names(strong), paper_selected_features));
@@ -327,10 +321,11 @@ if RUN_FIGURES || RUN_TABLES
     end
     group_by_function = sum([isfunc isrelu istanh] .* (1:26), 2);
     group_by_function = categorical(group_by_function);
-    % renamecats requires every OLDNAME to already be a category; with
-    % only 1 CORNN architecture sampled (SAMPLE_MODE), category '26'
-    % (Tanh) never occurs, so rename only whichever of '25'/'26' is
-    % actually present -- full mode (both present) is unaffected.
+    % renamecats requires every OLDNAME to already exist as a category.
+    % SAMPLE_MODE samples only 1 CORNN architecture, so category 26
+    % (Tanh) never occurs. Rename only whichever of 25 and 26 is
+    % present. Full mode has both present, so this does not change its
+    % behavior.
     old_arch_names = {'25','26'};
     new_arch_names = {'ReLU','Tanh'};
     present = ismember(old_arch_names, categories(group_by_function));
@@ -444,9 +439,10 @@ end
 if RUN_TABLES
     fprintf('\n--- Computing summary tables ---\n');
 
-    % trace_outputs{}.summary is a plain cell array (TRACE.m builds it via
-    % cell(nalgos+1,11), never a table), so writetable always rejects it --
-    % writecell is the correct call here.
+    % trace_outputs{}.summary is a plain cell array. TRACE.m builds it
+    % with cell(nalgos+1,11) and never converts it to a table.
+    % writetable always rejects a cell array, so writecell is the
+    % correct call here.
     summary = vertcat(trace_outputs{1}.summary, trace_outputs{2}.summary);
     try
         out_path = fullfile(isa_dir, 'footprint_summary.csv');
@@ -488,13 +484,13 @@ if RUN_TABLES
     number_groups_cornn = size(groups_cornn, 2);
     number_functions   = sum(groups_cornn(:, 1));
 
-    % train_test_dist is sized from group 1 (Net1/ReLU)'s instance count,
-    % which equals every other architecture/activation group's count in
-    % full mode (54 functions each) -- but in SAMPLE_MODE, only one of the
-    % 6 groups is actually populated (1 function x 1 architecture), so the
-    % other 5 groups are empty and their subtraction has 0 rows, not
-    % number_functions. Size each column to what its own group pair
-    % actually has, leaving unused rows at their preallocated NaN.
+    % train_test_dist takes its row count from group 1 (Net1/ReLU)'s
+    % instance count. In full mode, every architecture and activation
+    % group has the same count: 54 functions each. In SAMPLE_MODE, only
+    % 1 of the 6 groups is populated, with 1 function and 1 architecture.
+    % The other 5 groups are empty, so their subtraction has 0 rows, not
+    % number_functions. Size each column to its own group pair's actual
+    % row count. Unused rows stay at their preallocated NaN value.
     train_test_dist = nan(number_functions, 6);
     inc = 1;
     for ii = 1:2:number_groups_cornn
@@ -516,10 +512,11 @@ if RUN_TABLES
     end
 
     if RUN_FIGURES
-        % Groups with no matching CORNN architecture/activation instances
-        % (5 of 6, in SAMPLE_MODE) are entirely NaN; daviolinplot's ksdensity
-        % call rejects a group with zero real data points, so drop those
-        % groups from the plot rather than crash. Full mode has all 6.
+        % A group with no matching CORNN architecture and activation
+        % instances is entirely NaN. SAMPLE_MODE leaves 5 of the 6
+        % groups this way. daviolinplot's ksdensity call rejects a group
+        % with zero real data points. Drop these groups from the plot
+        % instead of letting it crash. Full mode populates all 6 groups.
         valid_groups = ~all(isnan(train_test_dist), 1);
         if any(valid_groups)
             plot_data = train_test_dist(:, valid_groups);

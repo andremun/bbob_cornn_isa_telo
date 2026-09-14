@@ -144,14 +144,13 @@ classdef KNNRegressor
 
                 w = 1 ./ (dist_k + epsilon);
                 w = w ./ sum(w,2);
-                % obj.y_train(idx_k): MATLAB's linear indexing of a vector
-                % by a vector index takes the *indexed* vector's own
-                % orientation, not the index's, whenever idx_k also
-                % happens to be a vector (i.e. exactly one test point) --
-                % silently returning a kVal-by-1 column instead of the
-                % expected 1-by-kVal row and breaking the elementwise
-                % multiply below. reshape forces the intended shape;
-                % it is a no-op once there is more than one test row.
+                % MATLAB indexes a vector with a vector index using the
+                % indexed vector's own shape, not the index's shape. This
+                % happens only when idx_k is also a vector, for example
+                % with one test point. The result is a kVal-by-1 column,
+                % not the expected 1-by-kVal row, and this breaks the
+                % multiply below. reshape restores the correct shape and
+                % does nothing when there is more than one test row.
                 y_pred(:,ki) = sum(w .* reshape(obj.y_train(idx_k), size(idx_k)),2);
 
                 exactMask = dist_k(:,1) == 0;
@@ -185,12 +184,13 @@ classdef KNNRegressor
             if ~isnumeric(K_values) || any(K_values < 1) || any(K_values > n_train) || any(K_values ~= round(K_values))
                 error('KNNRegressor:InvalidKValues','K_values must be integers between 1 and %d.', n_train);
             end
-            % Candidate K values are generated from the full n_train, but
-            % each fold's own model is trained on fewer samples (n_train
-            % minus that fold's test size); with few samples overall (e.g.
-            % SAMPLE_MODE), KFold produces uneven folds and the largest
-            % candidate K can exceed a fold's own training size, which
-            % predict() rejects. Cap to what every fold can support.
+            % Candidate K values come from the full n_train. Each fold's
+            % own model trains on fewer samples: n_train minus that
+            % fold's test size. SAMPLE_MODE trains on few samples, so
+            % KFold creates folds of different sizes, and the largest
+            % candidate K can then exceed one fold's training size.
+            % predict() rejects that K value, so cap K to a value every
+            % fold supports.
             min_fold_train = n_train - ceil(n_train / nFolds);
             K_values = K_values(K_values <= min_fold_train);
 

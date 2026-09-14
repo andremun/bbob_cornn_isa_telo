@@ -52,14 +52,15 @@ from cornn.config import (
 
 make_dirs()
 
-# COCO's Observer joins "result_folder" under a separate "outer_folder"
-# option (default "exdata", relative to the CWD) -- passing BBOB_META_DIR
-# directly as result_folder would silently nest the .dat logs under
-# ./exdata/<BBOB_META_DIR> instead of writing to BBOB_META_DIR itself.
-# Setting outer_folder explicitly makes BBOB_META_OBS_SUBDIR the actual
-# destination. Remove any previous run's subfolder first: COCO appends
-# _001, _002, ... to result_folder if it already exists, which would move
-# the logs out from under the fixed path bbob_collect_fopt.m expects.
+# COCO's Observer joins result_folder under a separate outer_folder
+# option. The default outer_folder is exdata, relative to the current
+# directory. Passing BBOB_META_DIR as result_folder alone nests the .dat
+# logs under ./exdata/<BBOB_META_DIR>, not under BBOB_META_DIR itself.
+# Setting outer_folder here makes BBOB_META_OBS_SUBDIR the real
+# destination. COCO adds _001, _002, and so on to result_folder when it
+# already exists. This would move the logs away from the fixed path
+# bbob_collect_fopt.m expects. Remove the subfolder from any previous run
+# first.
 obs_dir = BBOB_META_DIR / BBOB_META_OBS_SUBDIR
 if obs_dir.is_dir():
     shutil.rmtree(obs_dir)

@@ -227,11 +227,11 @@ inc = 1;
 ii = 1;
 n_incomplete = 0;
 while ii<number_files
-    % filelist mixes this instance's 4 nevergrad algorithm files with its
-    % Adam file (written into the same consol dir); "Adam" sorts before
-    % "CMA" alphabetically, so ii does not always point at a "_CMA" file --
-    % skip forward (as the CORNN AUC loop below already does) instead of
-    % indexing into an empty match.
+    % filelist mixes this instance's 4 nevergrad files with its Adam
+    % file. Both write into the same consol directory. Adam sorts before
+    % CMA alphabetically, so ii does not always point at a _CMA file.
+    % Skip forward instead of indexing into an empty match, as the CORNN
+    % AUC loop below already does.
     index_run = strfind(filelist{ii},'_CMA');
     if isempty(index_run)
         ii = ii + 1;
@@ -290,11 +290,12 @@ end
 
 area_under_the_curve_bbob = cell2table(area_under_the_curve_bbob, ...
                                        'VariableNames', algorithm_header);
-% cell2table silently collapses a column of equal-length char row vectors
-% into a 2-D char matrix instead of keeping it as text; this only bites in
-% SAMPLE_MODE, where a single dimension makes every Function name the same
-% length (full mode varies in length across dims 41/261/481), and 2-D char
-% matrices fail replace()/contains() below with "First argument must be text".
+% cell2table can collapse a column of equal-length char row vectors into
+% a 2-D char matrix instead of text. SAMPLE_MODE triggers this: its
+% single dimension makes every Function name the same length. Full mode
+% avoids it because dims 41/261/481 vary in length. A 2-D char matrix
+% fails replace() and contains() below with the error First argument
+% must be text.
 area_under_the_curve_bbob.Function = cellstr(area_under_the_curve_bbob.Function);
 out_path = fullfile(isa_dir, 'BBOB_area_under_the_curve.csv');
 writetable(area_under_the_curve_bbob, out_path);
@@ -413,10 +414,10 @@ for jj = 1:number_algorithms
     current_fevals = squeeze(expected_fevals(:,jj,:));
     censored = isinf(current_fevals(:));
     if all(censored)
-        % ecdf() on all-censored data returns F/X of mismatched lengths,
-        % which line() then rejects -- this only bites in SAMPLE_MODE,
-        % where the reduced budget/instance set can leave an algorithm
-        % with zero successes across the whole sample.
+        % ecdf() on all-censored data returns F and X vectors of
+        % mismatched lengths, and line() then rejects these. SAMPLE_MODE
+        % can trigger this: its reduced budget and instance set can leave
+        % an algorithm with zero successes across the whole sample.
         fprintf('[WARN] %s: all targets censored (never solved within budget) -- skipping ECDF line\n', algorithm_names{jj});
         continue
     end
@@ -470,29 +471,31 @@ end
 instance_list = unique(pflacco_data.xFunction);
 fprintf('Averaging features across replicates for %d unique instances\n', length(instance_list));
 
-% pflacco_avg is pre-sized to its final row count up front: assigning into
-% row ii>1 of a 1-row table (the previous approach) requires MATLAB to
-% auto-grow the table while only columns 2:end are specified, and filling
-% the untouched 'xFunction' (cell) column for that new row with the
-% generic double-typed default fails with "Conversion to cell from double
-% is not possible" -- observed on R2026a; pre-sizing avoids ever growing
-% a partially-specified row. ('ErrorHandler', @errorFunc) was previously
-% passed to varfun here, but errorFunc is not defined anywhere in this
-% repository -- every ELA feature column is numeric so mean() never
-% actually errors, but a real error would have failed harder by calling
-% a nonexistent function; removed rather than left as an untested handler.
+% pflacco_avg is pre-sized to its final row count. Assigning into row
+% ii>1 of a table with fewer rows makes MATLAB auto-grow the table. When
+% only columns 2:end are specified, MATLAB must fill the untouched
+% xFunction (cell) column for the new row with a default value. Filling
+% a cell column this way can fail with the error Conversion to cell from
+% double is not possible. Pre-sizing avoids growing a partially-specified
+% row.
+%
+% varfun below uses no ErrorHandler. errorFunc is not defined anywhere in
+% this repository. Every ELA feature column is numeric, so mean() never
+% errors. An ErrorHandler that called an undefined function would fail
+% harder than the error it was meant to catch.
 n_instances = length(instance_list);
 for ii=1:n_instances
     idx = contains(pflacco_data.xFunction,instance_list{ii});
     r = varfun(@mean, pflacco_data(idx,2:end));
     if ii == 1
         pflacco_avg = repmat(r, n_instances, 1);
-        % 'Before', 1 (a position, not a column name) puts xFunction first
-        % unconditionally -- anchoring on a specific feature column name
-        % (as a previous version of this code did) breaks whenever the
-        % feature set's column order differs, e.g. ela_meta is present for
-        % every row in SAMPLE_MODE's single dimension but only for a subset
-        % of rows in full mode's mixed dimensions, shifting where it lands.
+        % 'Before', 1 uses a position, not a column name, so xFunction
+        % always becomes the first column. Anchoring on a specific
+        % feature column name breaks when the feature set's column order
+        % changes. For example, ela_meta appears in every row in
+        % SAMPLE_MODE's single dimension, but only in a subset of rows in
+        % full mode's mixed dimensions. This shifts where ela_meta lands
+        % in the column order.
         pflacco_avg = addvars(pflacco_avg, repmat({instance_list{ii}}, n_instances, 1), ...
             'NewVariableNames', 'xFunction', 'Before', 1);
     else

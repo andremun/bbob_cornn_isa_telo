@@ -270,8 +270,8 @@ python bbob_run_nevergrad.py       # 4 algorithms x 2 functions x 3 instances x 
 python bbob_run_adam.py            # 2 functions x 3 instances x 3 runs, ~1 min
 ```
 
-The four `cornn_*.py` commands must run with the cloned CORNN repository as
-the current working directory (see README.md, Installation > CORNN):
+Run the four `cornn_*.py` commands with the cloned CORNN repository as the
+current working directory. See README.md, Installation > CORNN.
 
 ```bash
 export SAMPLE_MODE=1

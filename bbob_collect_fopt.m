@@ -37,7 +37,7 @@ root_dir = fullfile(cfg.bbob_meta_dir, cfg.bbob_meta_obs_subdir);
 if ~isfolder(root_dir)
     error('bbob_collect_fopt:missingDir', ...
         ['Expected directory not found: %s\n' ...
-         'This is produced by bbob_collect_meta.py -- run that script first.'], root_dir);
+         'Run bbob_collect_meta.py first. It creates this directory.'], root_dir);
 end
 
 fprintf('\n=== bbob_collect_fopt.m ===\n');
