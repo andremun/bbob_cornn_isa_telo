@@ -244,8 +244,8 @@ export SAMPLE_MODE=1
 Sample mode restricts the scripts to 2 BBOB functions (f1, f8), 3
 instances, dimension 41, and 1 replicate. It also restricts CORNN to 1
 function and 1 architecture, with 3 runs and an evaluation budget of 500.
-Sample mode bypasses task dispatch entirely. Each bare `python
-<script>.py` command below then processes the whole sample subset in one
+Sample mode bypasses task dispatch entirely. Each bare `python <script>.py`
+command below then processes the whole sample subset in one
 go. This needs no SLURM, no cluster, and no environment variable beyond
 `SAMPLE_MODE=1`:
 
