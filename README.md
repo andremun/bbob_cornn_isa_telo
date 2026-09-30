@@ -541,8 +541,8 @@ If you use this code or data in your research, please cite:
   title     = {{ISA} of Neural Network Training as a {BBO} Problem},
   year      = {2026},
   publisher = {FigShare},
-  doi       = {10.26188/32609130},
-  url       = {https://doi.org/10.26188/32609130}
+  doi       = {10.26188/32609130.v1},
+  url       = {https://doi.org/10.26188/32609130.v1}
 }
 ```
 
