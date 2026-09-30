@@ -67,6 +67,12 @@ fopt = table2array(readtable(fullfile(cfg.bbob_meta_dir, 'bbob_fopt.csv')));
 
 fprintf('\n=== shared_consolidate_raw_data.m ===\n');
 fprintf('Output directory: %s\n', isa_dir);
+if cfg.sample_mode
+    fprintf(['[INFO] SAMPLE_MODE is active. The numbers this script and ' ...
+             'shared_generate_instance_space.m produce below check that the ' ...
+             'pipeline runs end to end. With so few instances, treat them ' ...
+             'as a pipeline check, not as a valid instance space analysis.\n']);
+end
 
 %% CONSOLIDATE BBOB NEVERGRAD RAW DATA
 fprintf('\n--- Consolidating BBOB nevergrad raw data ---\n');
