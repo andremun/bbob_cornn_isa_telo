@@ -52,6 +52,11 @@ fprintf('\n=== shared_generate_instance_space.m ===\n');
 fprintf('Section flags: load_data=%d projection=%d features=%d models=%d footprints=%d figures=%d tables=%d\n', ...
         RUN_LOAD_DATA, RUN_PROJECTION, RUN_FEATURES, RUN_MODELS, RUN_FOOTPRINTS, RUN_FIGURES, RUN_TABLES);
 fprintf('Output directory: %s\n', isa_dir);
+if cfg.sample_mode
+    fprintf(['[INFO] SAMPLE_MODE is active. The numbers below check that the ' ...
+             'pipeline runs end to end. With so few instances, treat them as ' ...
+             'a pipeline check, not as a valid instance space analysis.\n']);
+end
 
 %% LOAD AND JOIN ELA + AUC DATA
 if RUN_LOAD_DATA
