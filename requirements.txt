@@ -1,0 +1,13 @@
+# Python 3.10 environment
+# Install with: pip install -r requirements.txt
+#
+# Note: cocoex (COCO/BBOB interface) is NOT listed here because the standard
+# PyPI package does not support dimensions {41, 261, 481}. It must be built
+# from source using suite_largescale.c — see README Installation section.
+
+nevergrad>=1.0.8
+numpy~=1.24.3
+pandas>=1.5.0
+torch>=1.12.1
+scikit-learn>=1.1.2
+pflacco==1.2.2
